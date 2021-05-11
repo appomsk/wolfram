@@ -8,7 +8,7 @@ conditionals and loops.
 
 2.2 Symbols and variables
 
-In Mathematica , variables are (possibly composite) symbols that can store
+In Mathematica, variables are (possibly composite) symbols that can store
 some definitions. More precisely, as variables can be used expressions which
 can be the l.h.s. of global rules not containing patterns (consider this as
 our definition of variables. What it means is explained below).
@@ -27,7 +27,7 @@ underscore <_> should not be used either - it has a different purpose in
 Mathematica.
 
 If you are in doubt whether your symbol is legitimate, you can always use the
-Head[- Unevaluated[yoursymbol]] command to check its head: if it is <Symbol>,
+Head[Unevaluated[yoursymbol]] command to check its head: if it is <Symbol>,
 you are in business. The reasons why you need <Unevaluated> are a bit involved
 to discuss now, but basically it guarantees that the Head function tests the
 head of your original symbol rather than what it may evaluate to. For
@@ -37,7 +37,7 @@ Head:
     In[13]:= Head[a&&True]
     Out[13]= Symbol
 
-We happily try to assign something to it :
+We happily try to assign something to it:
 
     In[14]:= a&&True = b
     Set::write: Tag And in a && True is Protected.
@@ -91,14 +91,15 @@ This is how we inspect <a>:
     Out[17]= Null
 
 If we inspect a symbol which has not been introduced to the system yet (it is
-said not to be in the symbol table), we get a message :
+said not to be in the symbol table), we get a message:
 
     ? c
     Information::notfound: Symbol c not found.
 
 (* END DOES NOT WORK *)
 
-If we inspect some built - in symbols, we usually get a quick summary of their functionality :
+If we inspect some built-in symbols, we usually get a quick summary of their
+functionality:
 
     In[22]:= ?Map
 
@@ -131,7 +132,7 @@ atoms or normal expressions (there is no notion of "type" in Mathematica as
 such - see below).
 
 The built-in function which reflects the possible assignment made to a "proper"
-variable is called OwnValues. For example :
+variable is called OwnValues. For example:
 
     In[25]:= a=3;\
 	    OwnValues[a]
@@ -153,32 +154,32 @@ In addition to these, there are other objects which can also store values and
 sometimes be interpreted as variables. In particular, consider the following
 assignments:
 
-In[26]:= b[1] = 1;\
-         b[2] = 4;\
-         b[10] = 100;
-Out[26]= None
+    In[26]:= b[1] = 1;\
+            b[2] = 4;\
+            b[10] = 100;
+    Out[26]= None
 
-This looks like array indexing, but it is not (see section 2.9.4). We can check whether or not these definitions are stored as OwnValues :
+This looks like array indexing, but it is not (see section 2.9.4). We can
+check whether or not these definitions are stored as OwnValues:
 
-In[27]:= OwnValues[b]
-Out[27]= {}
+    In[27]:= OwnValues[b]
+    Out[27]= {}
 
 They are not. Instead, they happen to be stored as DownValues (another type of
-global rules) :
+global rules):
 
-In[28]:= DownValues[b]
-Out[28]= {HoldPattern[b[10]] :> 100, HoldPattern[b[2]] :> 4, HoldPattern[b[1]] :> 1}
+    In[28]:= DownValues[b]
+    Out[28]= {HoldPattern[b[10]] :> 100, HoldPattern[b[2]] :> 4, HoldPattern[b[1]] :> 1}
 
 We see that there can be many global rules stored in DownValues and associated
 with the same symbol (<b> here). In general, DownValues are used to store the
 function definitions. Thus, one way to interpret the above assignment is that
-we defined a function < b > on 3 specific values of the argument. Sometimes,
+we defined a function <b> on 3 specific values of the argument. Sometimes,
 however, it is more convenient to interpret b[i] as a set of "indexed
 variables" - particularly when there is no general pattern - based definition
-for < b > (if this is somewhat unclear now, wait until chapter IV on
-functions). Thus, in some cases we will interpret these composite objects
-(notice, their head is not <Symbol> - in this case it is <b>) as "indexed
-variables".  
+for <b> (if this is somewhat unclear now, wait until chapter IV on functions).
+Thus, in some cases we will interpret these composite objects (notice, their
+head is not <Symbol> - in this case it is <b>) as "indexed variables".  
 
 Indexed variables are quite useful in many circumstances. The indices for them
 can be any Mathematica expressions (not necessarily numbers, like in this
@@ -191,7 +192,7 @@ indexed variables.
 
 2.2.5 Composite variables and SubValues
 
-Finally, there can be cases like the following :
+Finally, there can be cases like the following:
 
     In[2]:= Clear[a,b,c,x,y,z]; a[b][1] = x; a[b][2] = y; a[c][1] = z;
     Out[2]= None
@@ -205,10 +206,10 @@ head of such a "variable" is a composite object itself:
     Out[3]= a[b]
 
 The definitions like above are stored as yet another type of a global rule,
-called a SubValue (SubValues command) :
+called a SubValue (SubValues command):
 
-In[4]:= SubValues[a]
-Out[4]= {HoldPattern[a[c][1]] :> z, HoldPattern[a[b][2]] :> y, HoldPattern[a[b][1]] :> x}
+    In[4]:= SubValues[a]
+    Out[4]= {HoldPattern[a[c][1]] :> z, HoldPattern[a[b][2]] :> y, HoldPattern[a[b][1]] :> x}
 
 We see that there can be more than one global rule stored in SubValues,
 similarly to DownValues. Note that SubValues associate these definitions with
@@ -235,18 +236,18 @@ before they are defined. Many examples of using Clear will follow.
 
 The Clear command removes the rules associated with a symbol, but not some
 other symbol properties, such as Options or Attributes. Consider the following
-code :
+code:
 
     Options[b] = {Heads -> True};
     Attributes[b] = HoldAll;
 
-We have assigned some properties to a symbol <b> . Now we Clear it :
+We have assigned some properties to a symbol <b> . Now we Clear it:
 
     Clear[b];
     Options[b]
     Attributes[b]
 
-To clear all properties associated with the symbol, use ClearAll :
+To clear all properties associated with the symbol, use ClearAll:
 
     ClearAll[b];
 
@@ -257,9 +258,9 @@ To clear all properties associated with the symbol, use ClearAll :
 
 2.2.7 Does a variable have a value? ValueQ
 
-In Mathematica , it is quite legal for a variable (symbol or expression) not to
+In Mathematica, it is quite legal for a variable (symbol or expression) not to
 have any value, or, put differently, not to be a l.h.s. of any global rule
-present currently in a system. For example :
+present currently in a system. For example:
 
     In[3]:= b
     Out[3]= b
@@ -269,7 +270,7 @@ itself).  For any given variable, or expression in general, one may ask whether
 or not it has a value, or in other words, whether or not it is a l.h.s. of some
 global rule present in the system. Of course, on way would be to check all the
 ... Values, but there exists a better way : use a built-in ValueQ predicate.
-For instance :
+For instance:
 
     In[5]:= a[b][1] = 1
     Out[5]= 1
@@ -310,7 +311,7 @@ All variable definitions are global rules. Normally, variable names are just
 symbols (head Symbol). The definitions for such variables are rules called
 OwnValues and stored in OwnValues[symbol]. The second (rather rarely used) type
 of variables are indexed variables. They have head being another simple symbol
-(like a[1] has a head < a >), rather than Symbol, and are stored in DownValues
+(like a[1] has a head <a>), rather than Symbol, and are stored in DownValues
 attached to their head. In some rare cases one can also introduce variables
 with composite heads. These are stored in SubValues attached to their symbolic
 head. The latter two types of variables are usually used in more special
@@ -511,7 +512,7 @@ change and perhaps then Equal will evaluate. For instance:
 
 The above behavior of Equal - the fact that it evaluates to itself whenever
 equality can not be determined (on different symbolic expressions on different
-sides), is exploited in various built - in functions which receive equations as
+sides), is exploited in various built-in functions which receive equations as
 their arguments, such as Solve, DSolve, etc. The equation is written as for
 instance x^2 - 3 x + 2 == 0:
 
@@ -522,12 +523,12 @@ instance x^2 - 3 x + 2 == 0:
 
 Since Equal[a, b], as everything else, is a Mathematica expression, we can
 assign some variable the value of this expression. As an example, consider the
-following statement :
+following statement:
 
     In[43]:= Clear[x, test]; test = Sin[x] == 0
     Out[43]= Sin[x] == 0
 
-Let us now give <x> a value :
+Let us now give <x> a value:
 
     In[44]:= x=Pi; test
     Out[44]= True
@@ -581,7 +582,7 @@ cover it later).
     In[50]:= Clear[a,inc]; a=5; inc[x_] := x = x+1; Attributes[inc] = {HoldAll};
     Out[50]= None
 
-Now, check this :
+Now, check this:
 
     In[51]:= inc[a] == inc[a]
     Out[51]= False
@@ -605,7 +606,7 @@ this case) evaluated. This is a general rule of Mathematica evaluation - it
 normally starts from leaves and goes from inside out to branches and then to
 root. This is called standard evaluation. However, you may have noticed the
 inconsistency: by the same logic, <a> should have been evaluated first, and
-thus the function < inc > should have had no chance of changing the value of
+thus the function <inc> should have had no chance of changing the value of
 <a> whatsoever. This is because it had to always get a number (current value of
 <a>), since <a> is a leaf for <inc>, and thus had to be evaluated before
 <inc[a]> . And you will be absolutely correct - normally this does not happen,
@@ -640,17 +641,17 @@ may return unevaluated, may sometimes be unsatisfactory. This is so when one
 needs a definite yes - or - no answer. For this purpose, there exists another
 comparison operator (but see the caveat below) - SameQ.  (* BUG? === DOES NOT
 WORK - SameQ works - The second operator has a short-hand notation as a triple
-equal sign === , for instance x===y, and a literal equivalent SameQ, for
-instance SameQ[x,y]. *) Its purpose is to compare expression by their syntactic
-form rather than value. It gives True when expression are literally the same
-and False otherwise. In particular, consider the input of our previous example:
+equal sign ===, for instance x===y, and a literal equivalent SameQ, for
+instance SameQ[x,y]. *) Its purpose is to compare expression by their
+syntactic form rather than value. It gives True when expression are literally
+the same and False otherwise. In particular, consider the input of our
+previous example:
 
     In[61]:= Clear[x]; SameQ[Sin[x]^2 + Cos[x]^2, 1]
     Out[61]= False
 
-
 It is interesting that one can also construct examples when Equal gives True
-while SameQ gives False. For instance, consider this :
+while SameQ gives False. For instance, consider this:
 
     In[62]:= Pi/2 == Pi/2.0
     Out[62]= True
@@ -679,14 +680,14 @@ produce True. For instance, in the following situation:
     In[66]:= c = Pi/2; d = Pi/2.; {a, b}
     Out[66]= {True, False}
 
-This means that the purpose of SameQ may in some cases be subtly different from
-just a replacement for Equal (SameQ, unlike Equal, always evaluates to True or
-False). For such cases, another operator comes handy: TrueQ. This function
-gives False whenever its argument does not evaluate to True. So, in the case
-above (unless we really are interested in aspects in which Pi/2 and Pi/2. are
-different), the proper thing to do is the following:
+This means that the purpose of SameQ may in some cases be subtly different
+from just a replacement for Equal (SameQ, unlike Equal, always evaluates to
+True or False). For such cases, another operator comes handy: TrueQ. This
+function gives False whenever its argument does not evaluate to True. So, in
+the case above (unless we really are interested in aspects in which Pi/2 and
+Pi/2. are different), the proper thing to do is the following:
 
-In[67]:= Clear[a,b,c,d]; a := TrueQ[Equal[c,d]];
+    In[67]:= Clear[a,b,c,d]; a := TrueQ[Equal[c,d]];
 
 Check:
 
@@ -701,9 +702,9 @@ consider a few non-trivial examples of them in later chapters).
 
 As you may have guessed, there are also operators which test whether the sides
 are unequal rather than equal, or unsame rather than same. You can guess the
-name of the operators as well - Unequal and UnsameQ, of course. The short -
-hand notation for Unequal is != , and for UnsameQ - =!=. They work in the
-same way as Equal and SameQ, but of course with opposite results.
+name of the operators as well - Unequal and UnsameQ, of course. The short-hand
+notation for Unequal is !=, and for UnsameQ - =!=. They work in the same way
+as Equal and SameQ, but of course with opposite results.
 
 (* === does not work but =!= works BUG *)
 
@@ -715,7 +716,8 @@ OR: short-hand ||, literal equivalent Or[], and the negation NOT (short-hand
 <!>, literal equivalent Not[]). As you can see, the short-hand notation is the
 same as in C.
 
-These operators return True or False, but also they may return unchanged if the value of a logical expression can not be determined:
+These operators return True or False, but also they may return unchanged if
+the value of a logical expression can not be determined:
 
     In[74]:= Clear[a,b,c]; And[a,b]
     Out[74]= a && b
@@ -795,13 +797,13 @@ an unknown object (see section 1.2.6). Let us change <b>:
     In[86]:= b = 2; a
     Out[86]= x
 
-And once again :
+And once again:
 
     In[87]:= b = 3; a
     Out[87]= y
 
 Notice that <a> gets recomputed every time since it has been defined with
-SetDelayed (:=). Another example :
+SetDelayed (:=). Another example:
 
     In[88]:= Clear[a,x,y,test];\
 	     a:= If[test, x, y]; test := Sin[x] == Cos[x]; a
@@ -815,201 +817,266 @@ Now:
     In[90]:= x = Pi/4; a
     Out[90]= Pi / 4
 
-In these cases, the condition <test> evaluated to False and True
-respectively, which led to the above values of <a> .
+In these cases, the condition <test> evaluated to False and True respectively,
+which led to the above values of <a> .
 
 2.7.4 Operators Which and Switch
-These operators generalize If to situations where we have to switch between several possibilities. Which is
-essentially a replacement for nested If statements. Switch in Mathematica resembles Switch in C, but
-differs from it significantly. First, it has a different (extended in a sense) functionality since it works on
-patterns (patterns are extremely important. We will cover them later). Also, Break[] operator is unneces-
-sary here, and so the fall-through behavior of C Switch is not possible (patterns sort of compensate for
-this). Finally, in C Switch can be used in more sophisticated ways to put some entry points in the block of
-code - this is not possible here. Both Which and Switch are well-explained in Mathematica Help, and we
-refer to it for further details regarding them.
-51
-� 2.8 Loops
-These constructs are quite analogous to the ones in C, with the exception that the roles of comma and
-semicolon are interchanged with respect to C. In general, loops are not very efficient in Mathematica, and
-in particular, the most effective in Mathematica functional style of programming does not involve loops at
-all. We will give just a few examples for completeness.
-Let us print numbers from 1 to 5 :
-� 2.8.1 For loop
-For�i � 1, i � 5, i���, Print�i��;
-1
-2
-3
-4
-5
-If one needs to place several operators in the body of the loop, one can do so by just separating them with
-a semicolon. The same comment applies to the While loop.
-� 2.8.2 While loop
-Or, the same with While :
-i � 1;
-While�i � 5, �Print�i�; i�����
-1
-2
-3
-4
-5
-� 2.8.3 Do loop
-And now with Do :
-Do�Print�i�, �i, 5��
-1
-2
-3
-4
-5
-� 2.8.4 Side effects induced by loops
-52
-�
-2.8.4 Side effects induced by loops
-In general, most Mathematica built - in functions do not introduce side effects, since they operate on a
-copy of the given expression. In For and While loops however, the index variables (like < i > above) will
-keep the final value that they had when the loop terminated, as a global value. It is a good practice to
-localize all loop variables inside one of the scoping constructs available in Mathematica (see section 4.8).
-On the other hand, the Do loop is a scoping construct by itself, so it localizes the iteration variable. How-
-ever, the way it does it may be not what one expects (since it effectively uses a Block scoping construct) -
-it localizes in time rather than in space. I will have more to say about it later (see section 4.8), but
-"normally" in the following situation:
-a :� i^2;
-Do�Print�a�, �i, 1, 5��
-1
-4
-9
-16
-25
-we could expect a symbol < a[i] > printed 5 times (since the definition of < a > uses a global < i > and Do
-is supposed to localize < i >) . On the other hand, the global < i > does not have any value after < Do >
-finishes, so <Do> is a scoping construct.
-i
-i
-For clarification of these issues, see section 4.8.
-� 2.8.5 Blocks of operators - the CompoundExpression command
-The parentheses in this example actually represent a composite operator, which is legitimate everywhere
-where the single operator is. Its literal form is CompoundExpression[oper1; ...; opern]. The operators
-have to be separated by semicolons. The value returned by CompoundExpression is the value of the last
-statement opern. In particular, if we insert a semicolon after < opern > as well, there will be no return
-value (more precisely, the return value will be Null).
-Notice also that the loop Do is not a version of Do - While in C, but just a faster version of For or While,
-where no condition is checked but one has to know exactly how many iterations are needed.
-� 2.8.6 Local goto statements: Break , Continue, Return
-There are statements to realize local Goto within the loop - Break[] and Continue[]. They work in the
-same way as they work in C. For example, here we will break from the Do loop after 4 iterations :
-i � 1;
-Do��Print�"�"�; If�i��� � 3, Break����, �50��
-53
-�
-�
-�
-�
-The Return[] statement can also be used to break from the loops, but it acts differently. We did not cover
-it yet, but there are three scoping constructs used in Mathematica to localize variables - Module, Block
-and With. If we have a For or While loop inside one of these constructs, then the Break[] statement will
-break from the loop only, and the code right after the loop (but inside the scoping construct) will start to
-execute. If we use Return[] however, we will also break from the entire localizing construct which
-encloses the loop (if there are nested localizing constructs, we break from the innermost one only). Not so
-for < Do > loop though : it is a localizing construct by itself, so using Return[] we will break out of Do but
-will remain in whatever localizing construct encloses Do. These comments will become more clear once
-you get familiar with Module, Block and With (end of chapter IV).
-� 2.8.7 Programs using loops are often inefficient in Mathematica
-It turns out that programs that use loops are often inefficient in Mathematica. This is not so much due to
-loops themselves being slow in Mathematica, as to the fact that certain common programming practices
-associated with loops are efficient in other languages but not in Mathematica.
-Let me illustrate this on a simple example. We will compute a sum of the first 100000 natural numbers.
-We will first do this with a loop, and then show a program written in a functional programming style.
-Here is the loop version :
-Timing�sm � 0;
-Do�sm � sm��i, �i, 100 000��; sm�
-�0.581, 5 000 050 000�
-And this is a functional realization :
-Timing�Apply�Plus, Range�100 000���
-�0.16, 5 000 050 000�
-We see that it is several times faster. The reasons why this is so, as well as when the procedural program-
-ming style (based on loops, conditionals, etc) is and is not appropriate, we will discuss at length in the next
-chapters. The Timing command that we used gives an elapsed time together with the result of evaluation
-for a given expression.
-To rehabilitate the loops somewhat, let me mention that they can be quite efficient in cases when it is
-possible to use the internal compilation :
-Compile��x, �n, �Integer��,
-Module��sm � x�, Do�sm � sm��i, �i, n��; sm���0, 100 000� �� Timing
-�0.03, 5.00005 � 109�
-The numbers returned by compiled functions can however be only machine - size numbers. Also, the
-compiler can not handle programs which operate on generic objects.
-54
-The numbers returned by compiled functions can however be only machine - size numbers. Also, the
-compiler can not handle programs which operate on generic objects.
-� 2.9 Four types of brackets in Mathematica
-Mathematica utilizes four different types of brackets: parentheses, single square brackets, double square
-brackets and the curly braces. Each type of brackets has a different meaning and purpose.
-� 2.9.1 Parentheses ()
-Parentheses are used to change the priority or precedence of different operations, like in other program-
-ming languages.
-There is another use of parentheses - to group together a block of operators which we want to be consid-
-ered as a single composite operator (in C curly braces are used for this purpose) - in this case, parentheses
-are the short hand notation for a CompoundExpression command.
-There is no confusion between these two uses of parentheses, since inside the block the operators have to
-be separated by semicolons, as we already discussed.
-� 2.9.2 Curly braces {}
-Curly braces always mean a list. They are equivalent to a literal command List:
-Clear�a, b, c�;
-�a, b, c� ��� List�a, b, c�
-True
-Lists represent collections of objects, possibly of different type, and are very important building blocks of
-Mathematica programs, since any complex data structure can be built out of them. We will cover them in
-a separate chapter devoted entirely to them.
-Some built-in functions use lists of one, two, three or four numbers as interators. One such function - the
-loop Do - we already encountered.
-� 2.9.3 Single square brackets []
-Single square brackets are used as building blocks for normal expressions in Mathematica. They are used
-to represent an arbitrary Mathematica expression as a nested tree-like structure, as we already discussed.
-This is their only (but very important) purpose in Mathematica.
-You may object that another purpose of them is to be used in function calls, like:
-Sin�Pi�
-0
-However, the truth is that the notion of function is secondary in Mathematica, the primary ones being
-notions of rules and patterns. Thus, all function calls are at the end (syntactically) just special cases of
-normal Mathematica expressions. The reason that the functions are computed is related to evaluation
-process and the presence in the global rule base of certain rules associated with the name of the function,
-but not to some special syntax of function calls (there is no such). For example, the following expression
-evaluates to itself:
-55
-However, the truth is that the notion of function is secondary in Mathematica, the primary ones being
-notions of rules and patterns. Thus, all function calls are at the end (syntactically) just special cases of
-normal Mathematica expressions. The reason that the functions are computed is related to evaluation
-process and the presence in the global rule base of certain rules associated with the name of the function,
-but not to some special syntax of function calls (there is no such). For example, the following expression
-evaluates to itself:
-Sin�5�
-Sin�5�
-just because there is no rule in the global rule base associated with Sin[5].
-� 2.9.4 Double square brackets [[ ]]
-Finally, double square brackets are used as a shorthand notation for a Part command, which is used to
-deconstruct an expression and index into sub-expressions, extracting them. We have already seen an
-example of how this can be done.
-Warning: a common mistake
-It is a very frequent mistake when single square brackets are used in order to extract elements of an array
-(list) or a matrix (list of lists), for example:
-Clear�lst�;
-lst � �1, 2, 3, 4, 5�;
-lst�1�
-�1, 2, 3, 4, 5��1�
-Here is the correct syntax:
-lst��1��
-1
-The problem is made worse by the fact that the wrong syntax above does not result in an error - this is a
-legitimate Mathematica expression. It just has nothing to do with the intended operation.
-Clear�lst�;
-56
-� Summary
-We have considered the most elementary operations with variables, such as assignments and comparisons,
-and also the control structures such as conditionals and loops, which are similar to those found in other
-procedural languages such as C. The reason that our exposition was rather brief is partly because many of
-these constructs are rarely used in serious Mathematica programming, being substituted by more powerful
-idioms which we will cover at length in the later chapters.
-I also used a few examples to illustrate some more subtle issues related to the rule-based nature of Mathe-
-matica. These issues are important to understand to get a "feel" of the differences between Mathematica
-and more traditional computing environments.
-Along the way, we saw some examples of use of the following built-in functions: Clear, Set, SetDelayed,
-Equal, SameQ, If, Do, For, While, Apply, Range, Timing.
 
+These operators generalize If to situations where we have to switch between
+several possibilities. Which is essentially a replacement for nested If
+statements. Switch in Mathematica resembles Switch in C, but differs from it
+significantly. First, it has a different (extended in a sense) functionality
+since it works on patterns (patterns are extremely important. We will cover
+them later). Also, Break[] operator is unneces- sary here, and so the
+fall-through behavior of C Switch is not possible (patterns sort of compensate
+for this). Finally, in C Switch can be used in more sophisticated ways to put
+some entry points in the block of code - this is not possible here. Both Which
+and Switch are well-explained in Mathematica Help, and we refer to it for
+further details regarding them.
+
+2.8 Loops
+
+These constructs are quite analogous to the ones in C, with the exception that
+the roles of comma and semicolon are interchanged with respect to C. In
+general, loops are not very efficient in Mathematica, and in particular, the
+most effective in Mathematica functional style of programming does not involve
+loops at all. We will give just a few examples for completeness.  Let us print
+numbers from 1 to 5:
+
+2.8.1 For loop
+
+    In[1]:= For[i=1, i<5, i++, Print[i]]
+    1
+    2
+    3
+    4
+    Out[1]= None
+
+If one needs to place several operators in the body of the loop, one can do so
+by just separating them with a semicolon. The same comment applies to the
+While loop.
+
+2.8.2 While loop
+
+Or, the same with While:
+
+    In[2]:= i=1; While[i<5, Print[i]; i++]
+    1
+    2
+    3
+    4
+    Out[2]= None
+
+2.8.3 Do loop
+
+And now with Do:
+
+    In[6]:= Do[Print[i], {i, 4}]
+    1
+    2
+    3
+    4
+    Out[6]= None
+
+2.8.4 Side effects induced by loops
+
+In general, most Mathematica built-in functions do not introduce side effects,
+since they operate on a copy of the given expression. In For and While loops
+however, the index variables (like <i> above) will keep the final value that
+they had when the loop terminated, as a global value. It is a good practice to
+localize all loop variables inside one of the scoping constructs available in
+Mathematica (see section 4.8).  On the other hand, the Do loop is a scoping
+construct by itself, so it localizes the iteration variable. How- ever, the
+way it does it may be not what one expects (since it effectively uses a Block
+scoping construct) - it localizes in time rather than in space. I will have
+more to say about it later (see section 4.8), but "normally" in the following
+situation:
+
+    In[7]:= Clear[i]; a := i^2; Do[Print[a], {i, 4}]
+    1
+    4
+    9
+    16
+    Out[7]= None
+
+we could expect a symbol <a[i]> printed 5 times (since the definition of <a>
+uses a global <i> and Do is supposed to localize <i>) . On the other hand, the
+global <i> does not have any value after <Do> finishes, so <Do> is a scoping
+construct.
+
+    In[]:=i
+    Out[]=i
+
+For clarification of these issues, see section 4.8.
+
+2.8.5 Blocks of operators - the CompoundExpression command
+
+The parentheses in this example actually represent a composite operator, which
+is legitimate everywhere where the single operator is. Its literal form is
+CompoundExpression[oper1; ...; oper_n]. The operators have to be separated by
+semicolons. The value returned by CompoundExpression is the value of the last
+statement opern. In particular, if we insert a semicolon after <oper_n> as
+well, there will be no return value (more precisely, the return value will be
+Null).
+
+Notice also that the loop Do is not a version of Do - While in C, but just a
+faster version of For or While, where no condition is checked but one has to
+know exactly how many iterations are needed.
+
+2.8.6 Local goto statements: Break, Continue, Return
+
+There are statements to realize local Goto within the loop - Break[] and
+Continue[]. They work in the same way as they work in C. For example, here we
+will break from the Do loop after 4 iterations:
+
+    In[17]:= i=1; Do[( Print["*"]; If[i++ > 3, Break[]]), {20}]
+    *
+    *
+    *
+    *
+    Out[17]= None
+
+The Return[] statement can also be used to break from the loops, but it acts
+differently. We did not cover it yet, but there are three scoping constructs
+used in Mathematica to localize variables - Module, Block and With. If we have
+a For or While loop inside one of these constructs, then the Break[] statement
+will break from the loop only, and the code right after the loop (but inside
+the scoping construct) will start to execute. If we use Return[] however, we
+will also break from the entire localizing construct which encloses the loop
+(if there are nested localizing constructs, we break from the innermost one
+only). Not so for <Do> loop though: it is a localizing construct by itself,
+so using Return[] we will break out of Do but will remain in whatever
+localizing construct encloses Do. These comments will become more clear once
+you get familiar with Module, Block and With (end of chapter IV).
+
+2.8.7 Programs using loops are often inefficient in Mathematica
+
+It turns out that programs that use loops are often inefficient in
+Mathematica. This is not so much due to loops themselves being slow in
+Mathematica, as to the fact that certain common programming practices
+associated with loops are efficient in other languages but not in Mathematica.
+Let me illustrate this on a simple example. We will compute a sum of the first
+100000 natural numbers.  We will first do this with a loop, and then show a
+program written in a functional programming style.  Here is the loop version:
+
+(* NOTE Very slow *)
+
+    In[21]:= Timing[sm = 0; Do[sm += i, {i, 10000}]; sm]
+    Out[21]= {6.59781, 50005000}
+
+And this is a functional realization:
+
+    In[22]:= Timing[Apply[Plus, Range[10000]]]
+    Out[22]= {0.62923, 50005000}
+
+We see that it is several times faster. The reasons why this is so, as well as
+when the procedural programming style (based on loops, conditionals, etc) is
+and is not appropriate, we will discuss at length in the next chapters. The
+Timing command that we used gives an elapsed time together with the result of
+evaluation for a given expression.  
+
+(* PASS
+
+To rehabilitate the loops somewhat, let me mention that they can be quite
+efficient in cases when it is possible to use the internal compilation:
+
+    In[25]:= Compile[{x, {n, _Integer}},
+    Module[{sm=x}, Do[sm = sm+i, {i, n}]; sm]][0, 10000] // Timing
+    Do::iterb: Iterator does not have appropriate bounds.
+    Out[25]= {5.57061, 5.0005*^7}
+
+The numbers returned by compiled functions can however be only machine - size
+numbers. Also, the compiler can not handle programs which operate on generic
+objects.
+
+MY: It does work and even a little faster but with some quirks *)
+
+2.9 Four types of brackets in Mathematica
+
+Mathematica utilizes four different types of brackets: parentheses, single
+square brackets, double square brackets and the curly braces. Each type of
+brackets has a different meaning and purpose.
+
+2.9.1 Parentheses ()
+
+Parentheses are used to change the priority or precedence of different
+operations, like in other program- ming languages.  There is another use of
+parentheses - to group together a block of operators which we want to be
+consid- ered as a single composite operator (in C curly braces are used for
+this purpose) - in this case, parentheses are the short hand notation for a
+CompoundExpression command.  There is no confusion between these two uses of
+parentheses, since inside the block the operators have to be separated by
+semicolons, as we already discussed.
+
+2.9.2 Curly braces {}
+
+Curly braces always mean a list. They are equivalent to a literal command List:
+
+    In[26]:= Clear[a,b,c]; {a,b,c} == List[a,b,c]
+    Out[26]= True
+
+Lists represent collections of objects, possibly of different type, and are
+very important building blocks of Mathematica programs, since any complex data
+structure can be built out of them. We will cover them in a separate chapter
+devoted entirely to them.  Some built-in functions use lists of one, two,
+three or four numbers as interators. One such function - the loop Do - we
+already encountered.
+
+2.9.3 Single square brackets []
+
+Single square brackets are used as building blocks for normal expressions in
+Mathematica. They are used to represent an arbitrary Mathematica expression as
+a nested tree-like structure, as we already discussed.  This is their only
+(but very important) purpose in Mathematica.
+
+You may object that another purpose of them is to be used in function calls,
+like Sin[Pi].  However, the truth is that the notion of function is secondary
+in Mathematica, the primary ones being notions of rules and patterns. Thus,
+all function calls are at the end (syntactically) just special cases of normal
+Mathematica expressions. The reason that the functions are computed is related
+to evaluation process and the presence in the global rule base of certain
+rules associated with the name of the function, but not to some special syntax
+of function calls (there is no such). For example, the expression Sin[5]
+evaluates to itself just because there is no rule in the global rule base
+associated with Sin[5].
+
+2.9.4 Double square brackets [[ ]]
+
+Finally, double square brackets are used as a shorthand notation for a Part
+command, which is used to deconstruct an expression and index into
+sub-expressions, extracting them. We have already seen an example of how this
+can be done.
+
+Warning: a common mistake
+
+It is a very frequent mistake when single square brackets are used in order to
+extract elements of an array (list) or a matrix (list of lists), for example:
+
+    In[27]:= Clear[xs]; xs = {1,2,3,4,5}; xs[1]
+    Out[27]= {1, 2, 3, 4, 5}[1]
+
+Here is the correct syntax:
+
+    In[]:= xs[[1]]
+    Out[]= 1
+
+The problem is made worse by the fact that the wrong syntax above does not
+result in an error - this is a legitimate Mathematica expression. It just has
+nothing to do with the intended operation.
+
+Summary
+
+We have considered the most elementary operations with variables, such as
+assignments and comparisons, and also the control structures such as
+conditionals and loops, which are similar to those found in other procedural
+languages such as C. The reason that our exposition was rather brief is partly
+because many of these constructs are rarely used in serious Mathematica
+programming, being substituted by more powerful idioms which we will cover at
+length in the later chapters.
+
+I also used a few examples to illustrate some more subtle issues related to
+the rule-based nature of Mathematica. These issues are important to understand
+to get a "feel" of the differences between Mathematica and more traditional
+computing environments.  Along the way, we saw some examples of use of the
+following built-in functions: Clear, Set, SetDelayed, Equal, SameQ, If, Do,
+For, While, Apply, Range, Timing.
