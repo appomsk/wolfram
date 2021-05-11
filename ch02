@@ -1,0 +1,1015 @@
+II. Elementary operations
+
+2.1 Introduction
+
+In this chapter we will discuss some basic operations with variables such as
+assignments, and also some procedural control flow structures, such as
+conditionals and loops.
+
+2.2 Symbols and variables
+
+In Mathematica , variables are (possibly composite) symbols that can store
+some definitions. More precisely, as variables can be used expressions which
+can be the l.h.s. of global rules not containing patterns (consider this as
+our definition of variables. What it means is explained below).
+
+2.2.1 Legitimate symbol names
+
+An immediate comment on legal symbol names is due here. Any name which has a
+head Symbol and is not a name used by the system, is legal to associate some
+rules (global definitions) with - in other words, a legal name for a variable
+or a function. It can not start with a number, but can contain numbers. It can
+contain both capital and small letters, and Mathematica is case-sensitive, so
+names like <totalsum> and <totalSum> are considered different. There are
+several special symbols that should not be used in symbol names, such as
+@,#,$,%,^,&,*,!,~,‘. What may be surprising for C programmers is that the
+underscore <_> should not be used either - it has a different purpose in
+Mathematica.
+
+If you are in doubt whether your symbol is legitimate, you can always use the
+Head[- Unevaluated[yoursymbol]] command to check its head: if it is <Symbol>,
+you are in business. The reasons why you need <Unevaluated> are a bit involved
+to discuss now, but basically it guarantees that the Head function tests the
+head of your original symbol rather than what it may evaluate to. For
+instance, you decide to use <a&&True> symbol. This is the result of using
+Head:
+
+    In[13]:= Head[a&&True]
+    Out[13]= Symbol
+
+We happily try to assign something to it :
+
+    In[14]:= a&&True = b
+    Set::write: Tag And in a && True is Protected.
+    Out[14]= b
+
+and get an error message.
+
+What happens is that our symbol is really a logical And of <a> and True, and
+it evaluates to <a> when we try to use Head function - so the head seems to be
+Symbol. But in the assignment, the original symbol is used, and its head is
+And. For reasons which will become clear soon, this leads to an error. Using
+Head[Unevaluated[symbol]] reveals that our symbol is bad:
+
+    In[12]:= Head[Unevaluated[a&&True]]
+    Out[12]= And
+
+This behavior will become clear after we cover more material.
+
+    In[15]:= a&&True = 1
+    Set::write: Tag And in a && True is Protected.
+    Out[15]= 1
+
+It is also a good habit to start the name of any symbol you use (variable or
+function) with a small letter, since then there is no chance of colliding with
+a built-in symbol - all built-in symbols in Mathematica start with a capital
+letter or a special symbol such as $.
+
+2.2.2 Getting information about symbols
+
+For every symbol with the head Symbol (as tested by Head[Unevaluated[symb]]
+command, see above), it is possible to display the information that the system
+has on that symbol currently. This includes possible rules (definitions)
+associated with the symbol, some other properties possibly attached to the
+symbol, such as Attributes, and for system symbols brief explanations of their
+purpose and use.
+
+To display the global rules associated with the symbol, one
+uses either the question sign in front of the symbol for a brief info, or
+either a double question sign or the Information command, for more details.
+
+(* DOES NOT WORK *)
+
+For example, here we define a global variable <a>:
+
+    In[16]:= a = 3;
+    Out[16]= None
+
+This is how we inspect <a>:
+
+    In[17]:= ?a
+    Out[17]= Null
+
+If we inspect a symbol which has not been introduced to the system yet (it is
+said not to be in the symbol table), we get a message :
+
+    ? c
+    Information::notfound: Symbol c not found.
+
+(* END DOES NOT WORK *)
+
+If we inspect some built - in symbols, we usually get a quick summary of their functionality :
+
+    In[22]:= ?Map
+
+	    'Map[f, expr]' or 'f /@ expr'
+		applies f to each part on the first level of expr.
+	    'Map[f, expr, levelspec]'
+		applies f to each level specified by levelspec of expr.
+    Out[22]= Null
+
+We get more here by using ?? (or, Information[]):
+
+    In[23]:= ??Map
+
+	    'Map[f, expr]' or 'f /@ expr'
+		applies f to each part on the first level of expr.
+	    'Map[f, expr, levelspec]'
+		applies f to each level specified by levelspec of expr.
+
+	    Attributes[Map] = {Protected}
+
+	    Options[Map] = {Heads -> False}
+    Out[23]= Null
+
+2.2.3 "Proper" variables and OwnValues
+
+By "proper" variables we will mean variables with names being symbols (in the
+sense described above, with the head Symbol), which are used to store values.
+Due to symbolic nature of Mathematica, these values can be of any type, either
+atoms or normal expressions (there is no notion of "type" in Mathematica as
+such - see below).
+
+The built-in function which reflects the possible assignment made to a "proper"
+variable is called OwnValues. For example :
+
+    In[25]:= a=3;\
+	    OwnValues[a]
+    Out[25]= {HoldPattern[a] :> 3}
+
+The equal sign here represents an assignment operator, which we will cover
+shortly.
+
+Another way to characterize the "proper" variables is that their definitions
+are stored in OwnValues. One particular property of OwnValues is that for a
+given symbol there can be either no global rule or just one global rule (but
+not more) stored in OwnValues, and OwnValues only store rules associated with
+real symbols (with the head Symbol). This is another reason why I call this
+type of variables "proper".
+
+2.2.4 Indexed variables and DownValues
+
+In addition to these, there are other objects which can also store values and
+sometimes be interpreted as variables. In particular, consider the following
+assignments:
+
+In[26]:= b[1] = 1;\
+         b[2] = 4;\
+         b[10] = 100;
+Out[26]= None
+
+This looks like array indexing, but it is not (see section 2.9.4). We can check whether or not these definitions are stored as OwnValues :
+
+In[27]:= OwnValues[b]
+Out[27]= {}
+
+They are not. Instead, they happen to be stored as DownValues (another type of
+global rules) :
+
+In[28]:= DownValues[b]
+Out[28]= {HoldPattern[b[10]] :> 100, HoldPattern[b[2]] :> 4, HoldPattern[b[1]] :> 1}
+
+We see that there can be many global rules stored in DownValues and associated
+with the same symbol (<b> here). In general, DownValues are used to store the
+function definitions. Thus, one way to interpret the above assignment is that
+we defined a function < b > on 3 specific values of the argument. Sometimes,
+however, it is more convenient to interpret b[i] as a set of "indexed
+variables" - particularly when there is no general pattern - based definition
+for < b > (if this is somewhat unclear now, wait until chapter IV on
+functions). Thus, in some cases we will interpret these composite objects
+(notice, their head is not <Symbol> - in this case it is <b>) as "indexed
+variables".  
+
+Indexed variables are quite useful in many circumstances. The indices for them
+can be any Mathematica expressions (not necessarily numbers, like in this
+example), and therefore one possible use of them is to implement data
+structures such as Python dictionaries. Internally, hash tables are used to
+make indexed variables efficient, and thus, while there is no direct support
+for hash-tables in Mathematica (in version 6 there is a Hash built-in function
+though), one can actually use the internal hash tables just as well through
+indexed variables.
+
+2.2.5 Composite variables and SubValues
+
+Finally, there can be cases like the following :
+
+    In[2]:= Clear[a,b,c,x,y,z]; a[b][1] = x; a[b][2] = y; a[c][1] = z;
+    Out[2]= None
+
+Such definition is legal (the Clear command is used to clear variables and will
+be covered in a moment).  However, you can check that this definition is stored
+neither in OwnValues nor in DownValues of <a> or <b> . Note also that the
+head of such a "variable" is a composite object itself:
+
+    In[3]:= Head[Unevaluated[a[b][1]]]
+    Out[3]= a[b]
+
+The definitions like above are stored as yet another type of a global rule,
+called a SubValue (SubValues command) :
+
+In[4]:= SubValues[a]
+Out[4]= {HoldPattern[a[c][1]] :> z, HoldPattern[a[b][2]] :> y, HoldPattern[a[b][1]] :> x}
+
+We see that there can be more than one global rule stored in SubValues,
+similarly to DownValues. Note that SubValues associate these definitions with
+<a>, and in general with the outermost head of the composite head of an
+expression (this is called "symbolic head"). While this can also be considered
+as a variable in the sense that it can store values, it is rather uncommon
+(especially when used as a variable) and I would discourage the use of such
+"variables" except very special circumstances (such as, for example, to
+implement nested hash-tables).
+
+2.2.6 Clearing variables
+
+Since the rules for variables and functions are stored in the global rule base,
+it is essential for a "clean" work to make sure that we work with "clean"
+variables. This is achieved by using the Clear[var] command. In particular,
+this command removes all the definitions associated with a variable and stored
+as OwnValues, DownValues, SubValues or other types of global rules (there are
+only 3 more - UpValues, NValues and FormatValues (*FormatValues DOES NOT
+WORK*), but these types of rules are more advanced and we will not talk about
+them at this time). It is a good habit to clear any symbols you use right
+before they are defined. Many examples of using Clear will follow. 
+
+(* SKIPPED *)
+
+The Clear command removes the rules associated with a symbol, but not some
+other symbol properties, such as Options or Attributes. Consider the following
+code :
+
+    Options[b] = {Heads -> True};
+    Attributes[b] = HoldAll;
+
+We have assigned some properties to a symbol <b> . Now we Clear it :
+
+    Clear[b];
+    Options[b]
+    Attributes[b]
+
+To clear all properties associated with the symbol, use ClearAll :
+
+    ClearAll[b];
+
+    Options[b] (* BUG *)
+    Attributes[b] 
+
+(* TODO - Unset *)
+
+2.2.7 Does a variable have a value? ValueQ
+
+In Mathematica , it is quite legal for a variable (symbol or expression) not to
+have any value, or, put differently, not to be a l.h.s. of any global rule
+present currently in a system. For example :
+
+    In[3]:= b
+    Out[3]= b
+
+Since <b> here has no value yet, it is returned back (it is said to evaluate to
+itself).  For any given variable, or expression in general, one may ask whether
+or not it has a value, or in other words, whether or not it is a l.h.s. of some
+global rule present in the system. Of course, on way would be to check all the
+... Values, but there exists a better way : use a built-in ValueQ predicate.
+For instance :
+
+    In[5]:= a[b][1] = 1
+    Out[5]= 1
+
+    In[6]:= {ValueQ[a[b][1]],ValueQ[a[b]]}
+    Out[6]= {True, False}
+
+Notice that while a[b][1] has a value, this does not mean that a[b] necessarily has one, as ValueQ indicates. In this particular case, a[b] has to be treated as a composite name of an indexed variable.
+
+2.2.8 Assignments attach rules to Symbols
+
+From this discussion it may seem that there are a lot of different cases to
+learn about variable definitions.  But at the end of the day, in all cases
+described above, assignments attach global rules to symbols with the head
+Symbol. For OwnValues, this is just the variable itself, for DownValues this is
+a head of an indexed variable, and for SubValues this is a symbolic head of the
+composite head of the variable. So, for example, to clear any particular
+definition, one has to locate the symbol to which this definition is attached,
+and either Clear this symbol or use Unset if one needs to be selective, rather
+than trying to call Clear on composite expressions like in our failed attempt
+above.
+
+2.2.9 Summary
+
+The variables in Mathematica can be either symbols or normal expressions and
+can store any Mathematica expressions. The names of symbols can contain letters
+and numbers, but can not start with a number or contain certain special
+characters, underscore included. One can use Head[Unevaluated[symb]] command to
+check whether or not the symbol is legitimate (has a head Symbol). One should
+not use variables with names coinciding with some of the many system symbols.
+Starting a symbol name with a small letter will ensure no conflicts with the
+system symbols.
+
+(* DOES NOT WORK *) There are several commands in Mathematica which display the
+information about the variables, such as <?> and <Information>.
+
+All variable definitions are global rules. Normally, variable names are just
+symbols (head Symbol). The definitions for such variables are rules called
+OwnValues and stored in OwnValues[symbol]. The second (rather rarely used) type
+of variables are indexed variables. They have head being another simple symbol
+(like a[1] has a head < a >), rather than Symbol, and are stored in DownValues
+attached to their head. In some rare cases one can also introduce variables
+with composite heads. These are stored in SubValues attached to their symbolic
+head. The latter two types of variables are usually used in more special
+circumstances, since DownValues and SubValues are normally associated with
+functions rather than variable definitions.
+
+You will be better off not using DownValues or SubValues - based variables
+until you understand exactly when and for which purpose they are beneficial.
+
+Once the global definition is given to a variable, it remains there until
+another definition of the same type is entered to replace it, or until it is
+cleared.
+
+To clear the "normal" (OwnValue) variable definition, the Clear command is
+used. To clear also all other properties possibly associated with the variable,
+use ClearAll. (* NO: If you also need the symbol (name of the variable) to be
+removed from the symbol table, use Remove.*) All these commands can not be used
+on composite variables (DownValue-based or SubValue-based). To clear such
+variables, use Unset.
+
+2.3 Dynamic data typing
+
+Mathematica is a dynamically typed language, which means that the type of the
+variable is inferred when it is defined, and a single variable may be used as a
+placeholder for different types of data during the same Mathematica session
+(although this is not a best thing to do). In fact, there is no notion of type
+similar to other languages - it is replaced by notion of atoms and normal
+expressions as explained in the previous chapter.
+
+Any newly entered object is considered as a symbolic entity. Whenever it is
+entered, the symbol table is searched for it. If it is there, a new reference
+to it is created. If not, a new entry in the symbol table is created. If the
+object is new, or such that no rules immediately apply to it, it is returned:
+
+In[13]:= Clear[a]; a
+Out[13]= a
+
+In[14]:= Sin[a]
+Out[14]= Sin[a]
+
+In the last example, Sin is a built-in function, however no rules are
+associated with Sin[a] or <a>, so the expression returns.
+
+2.4 Assignments
+
+2.4.1 Immediate and delayed assignments: Set and SetDelayed
+
+There are two assignment commands in Mathematica: immediate and delayed assignment.
+
+The immediate assignment is performed with the equal sign (=), say x = y, which
+means "assign to x the value that y has right now". This command has a literal
+equivalent Set: we could equivalently write Set[x,y]. For delayed assignment,
+one has to use (:=) (semicolon plus an equal sign), say x:=y. The literal
+equivalent is the SetDelayed command, for instance SetDelayed[x,y]. This means
+"add to the global rule base a rule, which will substitute x every time that x
+is encountered, by the value that y will have at that moment". So, with this
+kind of assignment, the right hand side is not evaluated at the moment of
+assignment, but is re-evaluated every time when the left-hand side appears
+somewhere in the program. This is the main difference between the two
+assignment operators, since with Set, the l.h.s. is assigned the value that the
+r.h.s. has at the moment of assignment, "once and for all".
+
+2.4.2 The difference between Set and SetDelayed : an example
+
+Here is an example:
+
+    In[18]:= Clear[a,b]; a = Random[Integer, {1,10}]; Do[Print[a], {5}]
+    10
+    10
+    10
+    10
+    10
+
+    In[19]:= b := Random[Integer, {1,10}]; Do[Print[b], {5}]
+    9
+    8
+    6
+    2
+    7
+
+In both cases, an object (a or b) is assigned a random integer in the range 1
+-10. But in the former case, it is computed at the moment of assignment and
+then is attached to <a>, while in the latter case it is recomputed afresh every
+time that b is called. We have also used one of the looping constructs Do,
+which we will cover shortly.
+
+2.4.3 Chain assignments
+
+Chain assignments are possible for both Set and SetDelayed, but while the
+meaning of the former is the same as in C, the meaning of the latter is really
+different. Let me illustrate this point.  Here we assign the variables a,b and
+c the value 2:
+ 
+    In[20]:= Clear[a,b,c]; a=b=c=2; {a,b,c}
+    Out[20]= {2, 2, 2}
+
+Let us try the same with SetDelayed:
+
+    In[21]:= Clear[a,b,c]; a:=b:=c:=2; {a,b,c}
+    Out[21]= {Null, Null, 2}
+
+The Null output means "no output". This is because while the Set operator is
+actually an expression in the C sense and returns the value - that of the
+r.h.s, SetDelayed is an operator but a statement rather than an expression in
+the C sense, so it does not return a value. 
+
+
+(* 
+
+SKIP But what is important here is that neither <a> nor <b> received a "value"
+in the normal sense as variables (formally they did, according to our
+discussion of variable above, but what they received I would not call a
+"value"). Rather, they are triggers which trigger certain assignments. When <a>
+is called, this means "associate with b the rule that whenever b is called, the
+value of the r.h.s. of this rule as it is at this moment is returned". But the
+r.h.s of the rule for <b> is an assignment (of 2) to <c>, which means that
+after <a> is called just once, the values of 2 will be assigned to <c> every
+time that b is called. We can watch this once again to check the above
+statements:
+
+...
+
+*)
+
+2.4.4 Don’ t use SetDelayed with more than two arguments
+
+Notice by the way, that although SetDelayed in a literal form can also accept
+more than 2 arguments, the result will not be what one would probably expect.
+Namely, SetDelayed[a,b,c] is not the same as a:=b:=c.
+
+(* SKIP Rather, it attaches to a the rule that a be replaced by a sequence of b and c... *)
+
+2.4.5 Set and SetDelayed : when which one is used
+
+Normally one uses Set (=) to define variables, and SetDelayed (:=) - to define
+functions, for which the recomputation of the r.h.s. on a changed argument is a
+natural operation. However, in this respect Mathematica differs from other
+programming environments in that the distinction between functions and
+variables is achieved not on the level of keywords such as <function>, or
+specific forms of functions declaration, but essentially by the assignment
+operator that have been used to define the symbol (this is somewhat
+oversimplified), and also to some extent by a type of global rule associated
+with the symbol (but again, it is decided based on the syntactic form of the
+symbol, but at the moment of assignment). This allows to work with functions
+and variables on equal grounds. This lack of fundamental distinction between
+functions and variables is at the heart of the functional style of programming,
+which is one of the most efficient programming styles in Mathematica and which
+we will use a lot in the later chapters.
+
+2.5 Equality checks
+
+There are two operators in Mathematica which can be used to perform equality checks. They perform
+checks on semantic equality (equality by value) and syntactic equality (equality by syntactic form of expression).
+
+2.5.1 Equal
+
+The first operator has a short-hand notation as double equal sign (like in C):
+==, for instance x == y, and a literal equivalent Equal[x,y]. It is associative
+so that it is legitimate to write say x==y==z. This is different from C (but
+like in Python), where the above will not work as desired since y==z would
+evaluate to 1 or 0, and therefore x will be then compared to the result of
+comparison of y and z rather than to y or to z (which will probably be a bug).
+The literal equivalent of the last example would be Equal[x,y,z]. We can see
+that Equal can take many arguments, which is often handy. For example:
+
+    In[35]:= Clear[a,b,c]; a=b=c=2; d=3;
+    Out[35]= None
+
+    In[36]:= {a==b, b==d, a==b==c, Equal[a,b,c], Equal[a,b,c,d]}
+    Out[36]= {True, False, True, True, False}
+
+2.5.2 Beware: Equal may return "unevaluated"
+
+Equal works on any Mathematica expression, atom or a normal expression.
+However, in general, for arbitrary l.h.s. and r.h.s, Equal evaluates to itself
+because Mathematica can not determine whether or not the expressions have the
+same value. For example:
+
+In[37]:= Sin[x]^2 + Cos[x]^2 == 1
+Out[37]= Cos[x] ^ 2 + Sin[x] ^ 2 == 1
+
+This does not mean that Mathematica can not simplify the l.h.s.:
+
+    In[39]:= Sin[x]^2 + Cos[x]^2 //Simplify
+    Out[39]= 1
+
+It just means that by default it will not do so, unless instructed explicitly.
+In such cases, Equal returns unevaluated (not in the sense that it has not been
+evaluated at all, but in the sense that evaluation resulted in the original
+expression). This makes a lot of sense in a symbolic environment such as
+Mathematica, since at some point, new rules may be added, then expression will
+change and perhaps then Equal will evaluate. For instance:
+
+    In[40]:= Sin[x]^2 + Cos[x]^2 == 1 //Simplify
+    Out[40]= True
+
+2.5.3 Equal is used by built-in solvers to build equations
+
+The above behavior of Equal - the fact that it evaluates to itself whenever
+equality can not be determined (on different symbolic expressions on different
+sides), is exploited in various built - in functions which receive equations as
+their arguments, such as Solve, DSolve, etc. The equation is written as for
+instance x^2 - 3 x + 2 == 0:
+
+    In[42]:= Solve[x^2-3x+2==0, x]
+    Out[42]= {{x -> 1}, {x -> 2}}
+
+2.5.4 Assigning the result of Equal to a variable, and more on evaluation
+
+Since Equal[a, b], as everything else, is a Mathematica expression, we can
+assign some variable the value of this expression. As an example, consider the
+following statement :
+
+    In[43]:= Clear[x, test]; test = Sin[x] == 0
+    Out[43]= Sin[x] == 0
+
+Let us now give <x> a value :
+
+    In[44]:= x=Pi; test
+    Out[44]= True
+
+We see that initially test was unevaluated, but once x received a global value,
+test evaluated to True. What may look surprising however, is that internally
+<test> still has the previous definition, rather than <True>. In particular, if
+we now Clear our <x> variable, the result will again be a symbolic expression:
+
+    In[49]:= Clear[x]; test
+    Out[49]= Sin[x] == 0
+
+This means that the variable <test> in fact behaves like a function of x (although this is not a proper way
+to define functions). But more importantly, this explains to us part of the evaluation mechanics. First of
+all, the definition of <test> represents a rule in the global rule base. This can be seen by using the OwnValues function, which describes the definitions of variables (atoms):
+
+    In[48]:= OwnValues@test
+    Out[48]= {HoldPattern[test] :> Sin[x] == 0}
+
+Secondly, the way any global rule obtained by using the Set command is added,
+is that the r.h.s. is evaluated at the moment of definition, and the result
+added to the rule base. If some variables (x in this case) did not have a value
+at the moment of assignment, they will be added in their symbolic form. But
+once the rule has been added to the global rule base, it will not change in any
+way (unless it is removed or manipulated by hand later), regardless of possible
+changes in the variables used in the r.h.s., which happened after the rule has
+been added. That’s why in our example the definition of <test> remained
+unchanged despite changes in the value of <x>.
+
+It is very important to realize that rules in the global rule base exist
+completely independently of the global state of the system, in the sense that
+they can be only added or removed from the rule base, but do not change
+regardless of changes of the global state. If we think about it, this is the
+only way it can be, since the global state is itself determined by the state of
+the rule base. So, what we have just discussed may be rephrased like this:
+different rules added to the global rule base do not interact with each other
+during their "stay" in the rule base, but only during the evaluation of some
+expression. Had this not been so, and we would have no way to predict the
+outcome of the evaluation, since some rules would change other rules and the
+result would be different depending on the order in which they are applied.
+
+2.5.5 The role of side effects
+
+The symbolic nature of Mathematica may make one think that if any symbolic
+expression entered is the same on the l.h.s. and r.h.s. of the comparison
+operator, one would always get True. But this is not always so, in particular
+when the expression has side effects such as assignments. As an example,
+consider a function which increments its argument (ignore the code, we will
+cover it later).
+
+    In[50]:= Clear[a,inc]; a=5; inc[x_] := x = x+1; Attributes[inc] = {HoldAll};
+    Out[50]= None
+
+Now, check this :
+
+    In[51]:= inc[a] == inc[a]
+    Out[51]= False
+
+2.5.6 A digression: standard and non-standard evaluation
+
+(* DOES NOT WORK What happened is very easy to see by using Trace command: ... *)
+
+(* TODO *) ...first, inc[a] on the left evaluated, which resulted in the value
+6 but also incremented a as a side effect. Next, the r.h.s. evaluated,
+resulting in a value 7 and once again incrementing a. Thus, when Equal actually
+tested the expression, it looked like 6==7 which of course resulted in False
+(in fact, this example is not unique to Mathemtica. Similar situation would
+also occur in C in the same setting (change inc to ++), and there we would not
+even know which side of the comparison will evaluate first - this is up to a
+compiler).
+
+I used this example to illustrate several points. First, we saw that
+subexpressions inc[a] evaluated before the expression containing them (Equal in
+this case) evaluated. This is a general rule of Mathematica evaluation - it
+normally starts from leaves and goes from inside out to branches and then to
+root. This is called standard evaluation. However, you may have noticed the
+inconsistency: by the same logic, <a> should have been evaluated first, and
+thus the function < inc > should have had no chance of changing the value of
+<a> whatsoever. This is because it had to always get a number (current value of
+<a>), since <a> is a leaf for <inc>, and thus had to be evaluated before
+<inc[a]> . And you will be absolutely correct - normally this does not happen,
+and this behavior (when rules associated with expressions are applied before
+rules associated with sub-expressions) is called non-standard evaluation and in
+this case was induced by the second line in the definition of <inc> (HoldAll
+attribute - to be discussed later).
+
+Both standard and non-standard evaluation are equally important for the
+functioning of Mathematica.  Most built-in functions evaluate their arguments
+in the standard way, but many crucial built-in functions evaluate their
+argument in the non-standard way. This topic is too advanced for us now, but we
+will return to it later and consider it in more detail.
+
+2.5.7 Pass by reference semantics - possible to imitate
+
+Another point that this example illustrated is that we may arrange a function
+to change a value of the input variable such that these changes will remain
+valid after the function returns. This looks like a pass-by-reference semantics
+(although this is not entirely true since there are no pointers in
+Mathematica). But in general, such things are rather rarely used in Mathematica
+programming, since usually functions operate on a copy of the variable and the
+initial variable or expression remains unchanged. Since Mathematica functions
+may return any Mathematica expression (including lists containing many results)
+and memory is allocated dynamically (even variables don’t need to be declared),
+it is rarely necessary to simulate a pass-by-reference semantics.
+
+2.5.8 SameQ
+
+The above behavior of the Equal operator, and in particular the fact that it
+may return unevaluated, may sometimes be unsatisfactory. This is so when one
+needs a definite yes - or - no answer. For this purpose, there exists another
+comparison operator (but see the caveat below) - SameQ.  (* BUG? === DOES NOT
+WORK - SameQ works - The second operator has a short-hand notation as a triple
+equal sign === , for instance x===y, and a literal equivalent SameQ, for
+instance SameQ[x,y]. *) Its purpose is to compare expression by their syntactic
+form rather than value. It gives True when expression are literally the same
+and False otherwise. In particular, consider the input of our previous example:
+
+    In[61]:= Clear[x]; SameQ[Sin[x]^2 + Cos[x]^2, 1]
+    Out[61]= False
+
+
+It is interesting that one can also construct examples when Equal gives True
+while SameQ gives False. For instance, consider this :
+
+    In[62]:= Pi/2 == Pi/2.0
+    Out[62]= True
+
+    In[63]:= SameQ[Pi/2, Pi/2.0]
+    Out[63]= False
+
+What happens here is that while the value of both sides is the same,
+syntactically they are different:
+
+    In[64]:= { Pi/2, Pi/2. }
+    Out[64]= {Pi / 2, 1.5708}
+
+However, the inverse is true: if SameQ gives True, then Equal will also give
+True.
+
+2.5.9 TrueQ
+
+Caveat: the above example also indicates that sometimes the use of SameQ may be
+unsatisfactory either, since it may produce False where Equal would eventually
+produce True. For instance, in the following situation:
+
+    In[65]:= Clear[a,b,c,d]; a := Equal[c,d]; b := SameQ[c,d]; {a,b}
+    Out[65]= {c == d, False}
+
+    In[66]:= c = Pi/2; d = Pi/2.; {a, b}
+    Out[66]= {True, False}
+
+This means that the purpose of SameQ may in some cases be subtly different from
+just a replacement for Equal (SameQ, unlike Equal, always evaluates to True or
+False). For such cases, another operator comes handy: TrueQ. This function
+gives False whenever its argument does not evaluate to True. So, in the case
+above (unless we really are interested in aspects in which Pi/2 and Pi/2. are
+different), the proper thing to do is the following:
+
+In[67]:= Clear[a,b,c,d]; a := TrueQ[Equal[c,d]];
+
+Check:
+
+    In[68]:= a
+    Out[68]= False
+
+    In[69]:= c = Pi/2; d = Pi/2.; a
+    Out[69]= True
+
+Chain comparisons are also possible, and used every now and then (we will
+consider a few non-trivial examples of them in later chapters).
+
+As you may have guessed, there are also operators which test whether the sides
+are unequal rather than equal, or unsame rather than same. You can guess the
+name of the operators as well - Unequal and UnsameQ, of course. The short -
+hand notation for Unequal is != , and for UnsameQ - =!=. They work in the
+same way as Equal and SameQ, but of course with opposite results.
+
+(* === does not work but =!= works BUG *)
+
+2.6 Logical operators
+
+As many other languages, Mathematica has several built-in logical operators. We
+will consider logical AND : short-hand &&, literal equivalent And[], logical
+OR: short-hand ||, literal equivalent Or[], and the negation NOT (short-hand
+<!>, literal equivalent Not[]). As you can see, the short-hand notation is the
+same as in C.
+
+These operators return True or False, but also they may return unchanged if the value of a logical expression can not be determined:
+
+    In[74]:= Clear[a,b,c]; And[a,b]
+    Out[74]= a && b
+
+This is perhaps the main difference between these operators in Mathematica and
+other programming languages, of course due to the symbolic nature of
+Mathematica. The situation here is similar to that with If (see below). In case
+when the definite result is needed, TrueQ can be used:
+
+    In[76]:= TrueQ[And[a,b]]
+    Out[76]= False
+
+Another difference is that both And and Or can take multiple arguments:
+
+    In[77]:= And[a,b,c]
+    Out[77]= a && b && c
+
+    In[78]:= Or[a,b,c]
+    Out[78]= a || b || c
+
+Operators And and Or have the same "short-circuit" behavior as their analogs in
+C: And stops evaluating its arguments and returns False when the first
+argument which evaluates to False is encountered, and Or stops evaluating its
+arguments and returns True when the first argument which evaluates to True is
+encountered. Since normally arguments are evaluated before the function, we
+immediately conclude that both And and Or use non-standard evaluation.
+
+2.7 Conditionals
+
+2.7.1 The If operator
+
+The If operator has the syntax If[test, oper1, oper2].  Here <test> is a
+condition being tested. The condition <test> should in principle evaluate to
+True or False, in order for If to make a choice. If it evaluates to True, the
+first operator oper1 is evaluated, otherwise a second one. The second operator
+may be absent, in which case nothing is done for the False outcome (Null is
+returned).
+
+Since normally the arguments of the function are evaluated before the function
+itself, while in the case of If the operator which corresponds to True of False
+branch should only be evaluated after the condition is checked, we conclude
+that If uses non-standard evaluation.
+
+2.7.2 If may return "unevaluated"
+
+In Mathematica, there is a third possibility - that the condition <test> will
+not evaluate to either True or False. In this case, this is not considered an
+error, but the whole operator If will return "itself" - a symbolic expression
+as the answer.
+
+    In[81]:= Clear[a,b,c,d]; If[a, b, c]
+    Out[81]= If[a, b, c]
+
+In case when this is unsatisfactory, one can either use the TrueQ to ensure
+evaluation, or use an extended version of If with a fourth argument, which will
+be evaluated when the condition does not evaluate to either True or False:
+
+    In[82]:= If[a, b, c, d]
+    Out[82]= d
+
+2.7.3 If returns a value
+
+Another difference with other programming languages is that the whole operator
+If returns a value. In this sense, it is like a "question" operator in C : a ?
+b : c. Thus, the following is meaningful:
+
+    In[84]:= Clear[a,b,x,y]; a := If[EvenQ[b], x, y]
+
+We check now:
+
+    In[85]:= a
+    Out[85]= y
+
+The result is such since by default the predicate EvenQ evaluates to False on
+an unknown object (see section 1.2.6). Let us change <b>:
+
+    In[86]:= b = 2; a
+    Out[86]= x
+
+And once again :
+
+    In[87]:= b = 3; a
+    Out[87]= y
+
+Notice that <a> gets recomputed every time since it has been defined with
+SetDelayed (:=). Another example :
+
+    In[88]:= Clear[a,x,y,test];\
+	     a:= If[test, x, y]; test := Sin[x] == Cos[x]; a
+    Out[88]= If[Sin[x] == Cos[x], x, y]
+
+Now:
+
+    In[89]:= x = Pi/2; a
+    Out[89]= y
+
+    In[90]:= x = Pi/4; a
+    Out[90]= Pi / 4
+
+In these cases, the condition <test> evaluated to False and True
+respectively, which led to the above values of <a> .
+
+2.7.4 Operators Which and Switch
+These operators generalize If to situations where we have to switch between several possibilities. Which is
+essentially a replacement for nested If statements. Switch in Mathematica resembles Switch in C, but
+differs from it significantly. First, it has a different (extended in a sense) functionality since it works on
+patterns (patterns are extremely important. We will cover them later). Also, Break[] operator is unneces-
+sary here, and so the fall-through behavior of C Switch is not possible (patterns sort of compensate for
+this). Finally, in C Switch can be used in more sophisticated ways to put some entry points in the block of
+code - this is not possible here. Both Which and Switch are well-explained in Mathematica Help, and we
+refer to it for further details regarding them.
+51
+� 2.8 Loops
+These constructs are quite analogous to the ones in C, with the exception that the roles of comma and
+semicolon are interchanged with respect to C. In general, loops are not very efficient in Mathematica, and
+in particular, the most effective in Mathematica functional style of programming does not involve loops at
+all. We will give just a few examples for completeness.
+Let us print numbers from 1 to 5 :
+� 2.8.1 For loop
+For�i � 1, i � 5, i���, Print�i��;
+1
+2
+3
+4
+5
+If one needs to place several operators in the body of the loop, one can do so by just separating them with
+a semicolon. The same comment applies to the While loop.
+� 2.8.2 While loop
+Or, the same with While :
+i � 1;
+While�i � 5, �Print�i�; i�����
+1
+2
+3
+4
+5
+� 2.8.3 Do loop
+And now with Do :
+Do�Print�i�, �i, 5��
+1
+2
+3
+4
+5
+� 2.8.4 Side effects induced by loops
+52
+�
+2.8.4 Side effects induced by loops
+In general, most Mathematica built - in functions do not introduce side effects, since they operate on a
+copy of the given expression. In For and While loops however, the index variables (like < i > above) will
+keep the final value that they had when the loop terminated, as a global value. It is a good practice to
+localize all loop variables inside one of the scoping constructs available in Mathematica (see section 4.8).
+On the other hand, the Do loop is a scoping construct by itself, so it localizes the iteration variable. How-
+ever, the way it does it may be not what one expects (since it effectively uses a Block scoping construct) -
+it localizes in time rather than in space. I will have more to say about it later (see section 4.8), but
+"normally" in the following situation:
+a :� i^2;
+Do�Print�a�, �i, 1, 5��
+1
+4
+9
+16
+25
+we could expect a symbol < a[i] > printed 5 times (since the definition of < a > uses a global < i > and Do
+is supposed to localize < i >) . On the other hand, the global < i > does not have any value after < Do >
+finishes, so <Do> is a scoping construct.
+i
+i
+For clarification of these issues, see section 4.8.
+� 2.8.5 Blocks of operators - the CompoundExpression command
+The parentheses in this example actually represent a composite operator, which is legitimate everywhere
+where the single operator is. Its literal form is CompoundExpression[oper1; ...; opern]. The operators
+have to be separated by semicolons. The value returned by CompoundExpression is the value of the last
+statement opern. In particular, if we insert a semicolon after < opern > as well, there will be no return
+value (more precisely, the return value will be Null).
+Notice also that the loop Do is not a version of Do - While in C, but just a faster version of For or While,
+where no condition is checked but one has to know exactly how many iterations are needed.
+� 2.8.6 Local goto statements: Break , Continue, Return
+There are statements to realize local Goto within the loop - Break[] and Continue[]. They work in the
+same way as they work in C. For example, here we will break from the Do loop after 4 iterations :
+i � 1;
+Do��Print�"�"�; If�i��� � 3, Break����, �50��
+53
+�
+�
+�
+�
+The Return[] statement can also be used to break from the loops, but it acts differently. We did not cover
+it yet, but there are three scoping constructs used in Mathematica to localize variables - Module, Block
+and With. If we have a For or While loop inside one of these constructs, then the Break[] statement will
+break from the loop only, and the code right after the loop (but inside the scoping construct) will start to
+execute. If we use Return[] however, we will also break from the entire localizing construct which
+encloses the loop (if there are nested localizing constructs, we break from the innermost one only). Not so
+for < Do > loop though : it is a localizing construct by itself, so using Return[] we will break out of Do but
+will remain in whatever localizing construct encloses Do. These comments will become more clear once
+you get familiar with Module, Block and With (end of chapter IV).
+� 2.8.7 Programs using loops are often inefficient in Mathematica
+It turns out that programs that use loops are often inefficient in Mathematica. This is not so much due to
+loops themselves being slow in Mathematica, as to the fact that certain common programming practices
+associated with loops are efficient in other languages but not in Mathematica.
+Let me illustrate this on a simple example. We will compute a sum of the first 100000 natural numbers.
+We will first do this with a loop, and then show a program written in a functional programming style.
+Here is the loop version :
+Timing�sm � 0;
+Do�sm � sm��i, �i, 100 000��; sm�
+�0.581, 5 000 050 000�
+And this is a functional realization :
+Timing�Apply�Plus, Range�100 000���
+�0.16, 5 000 050 000�
+We see that it is several times faster. The reasons why this is so, as well as when the procedural program-
+ming style (based on loops, conditionals, etc) is and is not appropriate, we will discuss at length in the next
+chapters. The Timing command that we used gives an elapsed time together with the result of evaluation
+for a given expression.
+To rehabilitate the loops somewhat, let me mention that they can be quite efficient in cases when it is
+possible to use the internal compilation :
+Compile��x, �n, �Integer��,
+Module��sm � x�, Do�sm � sm��i, �i, n��; sm���0, 100 000� �� Timing
+�0.03, 5.00005 � 109�
+The numbers returned by compiled functions can however be only machine - size numbers. Also, the
+compiler can not handle programs which operate on generic objects.
+54
+The numbers returned by compiled functions can however be only machine - size numbers. Also, the
+compiler can not handle programs which operate on generic objects.
+� 2.9 Four types of brackets in Mathematica
+Mathematica utilizes four different types of brackets: parentheses, single square brackets, double square
+brackets and the curly braces. Each type of brackets has a different meaning and purpose.
+� 2.9.1 Parentheses ()
+Parentheses are used to change the priority or precedence of different operations, like in other program-
+ming languages.
+There is another use of parentheses - to group together a block of operators which we want to be consid-
+ered as a single composite operator (in C curly braces are used for this purpose) - in this case, parentheses
+are the short hand notation for a CompoundExpression command.
+There is no confusion between these two uses of parentheses, since inside the block the operators have to
+be separated by semicolons, as we already discussed.
+� 2.9.2 Curly braces {}
+Curly braces always mean a list. They are equivalent to a literal command List:
+Clear�a, b, c�;
+�a, b, c� ��� List�a, b, c�
+True
+Lists represent collections of objects, possibly of different type, and are very important building blocks of
+Mathematica programs, since any complex data structure can be built out of them. We will cover them in
+a separate chapter devoted entirely to them.
+Some built-in functions use lists of one, two, three or four numbers as interators. One such function - the
+loop Do - we already encountered.
+� 2.9.3 Single square brackets []
+Single square brackets are used as building blocks for normal expressions in Mathematica. They are used
+to represent an arbitrary Mathematica expression as a nested tree-like structure, as we already discussed.
+This is their only (but very important) purpose in Mathematica.
+You may object that another purpose of them is to be used in function calls, like:
+Sin�Pi�
+0
+However, the truth is that the notion of function is secondary in Mathematica, the primary ones being
+notions of rules and patterns. Thus, all function calls are at the end (syntactically) just special cases of
+normal Mathematica expressions. The reason that the functions are computed is related to evaluation
+process and the presence in the global rule base of certain rules associated with the name of the function,
+but not to some special syntax of function calls (there is no such). For example, the following expression
+evaluates to itself:
+55
+However, the truth is that the notion of function is secondary in Mathematica, the primary ones being
+notions of rules and patterns. Thus, all function calls are at the end (syntactically) just special cases of
+normal Mathematica expressions. The reason that the functions are computed is related to evaluation
+process and the presence in the global rule base of certain rules associated with the name of the function,
+but not to some special syntax of function calls (there is no such). For example, the following expression
+evaluates to itself:
+Sin�5�
+Sin�5�
+just because there is no rule in the global rule base associated with Sin[5].
+� 2.9.4 Double square brackets [[ ]]
+Finally, double square brackets are used as a shorthand notation for a Part command, which is used to
+deconstruct an expression and index into sub-expressions, extracting them. We have already seen an
+example of how this can be done.
+Warning: a common mistake
+It is a very frequent mistake when single square brackets are used in order to extract elements of an array
+(list) or a matrix (list of lists), for example:
+Clear�lst�;
+lst � �1, 2, 3, 4, 5�;
+lst�1�
+�1, 2, 3, 4, 5��1�
+Here is the correct syntax:
+lst��1��
+1
+The problem is made worse by the fact that the wrong syntax above does not result in an error - this is a
+legitimate Mathematica expression. It just has nothing to do with the intended operation.
+Clear�lst�;
+56
+� Summary
+We have considered the most elementary operations with variables, such as assignments and comparisons,
+and also the control structures such as conditionals and loops, which are similar to those found in other
+procedural languages such as C. The reason that our exposition was rather brief is partly because many of
+these constructs are rarely used in serious Mathematica programming, being substituted by more powerful
+idioms which we will cover at length in the later chapters.
+I also used a few examples to illustrate some more subtle issues related to the rule-based nature of Mathe-
+matica. These issues are important to understand to get a "feel" of the differences between Mathematica
+and more traditional computing environments.
+Along the way, we saw some examples of use of the following built-in functions: Clear, Set, SetDelayed,
+Equal, SameQ, If, Do, For, While, Apply, Range, Timing.
+
