@@ -1,583 +1,758 @@
 IV. Rules, patterns and functions
+
 4.1 Introduction
+
 In this chapter we will introduce the notion of functions in Mathematica, and also consider numerous
 examples of functions. Since the Mathematica programming language is to a large extent a functional
 programming language, functions are the central objects here. Also, since lists are used as universal
 building blocks for data structures, and any complex data structure can be built with lists and modified
-"on the fly", the emphasis is shifted more towards functions, as compared say to OO programming lan-
-guages.
+"on the fly", the emphasis is shifted more towards functions, as compared say to OO programming languages.
+
 Another important aspect of functions and functional programming in Mathematica is that this "layer" of
 programming is built upon a (in my view, more fundamental in Mathematica) rule-based engine. This
 results in the notion of function which is wider than, and also significantly different from that in most
 other programming languages. Thus, one will not have a complete grasp of functions in Mathematica
 without the understanding of rules and rule-based programming techniques. We will discuss them here as
 well.
+
 4.2 Rules and patterns
+
 To better understand functions in Mathematica, we need a good understanding of patterns and rule substi-
-tution. These two topics are just two facets of a single one, since it is the form of the pattern which deter-
-mines when (on which class of objects) the associated rule will apply.
-� 4.2.1 Rule, RuleDelayed, Replace and ReplaceAll commands
-� 4.2.1.1 Basic rules and the Rule head (function)
+tution. These two topics are just two facets of a single one, since it is the form of the pattern which determines when (on which class of objects) the associated rule will apply.
+
+4.2.1 Rule, RuleDelayed, Replace and ReplaceAll commands
+
+4.2.1.1 Basic rules and the Rule head (function)
+
 It is very easy to organize a rewrite rule in Mathematica. For example, the following rule will replace a to b
-Clear�a, b, ourrule�;
-ourrule � a � b
-a � b
+
+    In[30]:= Clear[a,b,ourrule]; ourrule = a->b
+    Out[30]= a -> b
+
 The literal equivalent to the arrow (which represents the rule) is the Rule command. If we look at the
 FullForm of < ourrule > variable, we see that Rule is used :
-FullForm�ourrule�
-Rule�a, b�
-92
-� 4.2.1.2 How to make the rule apply: ReplaceAll function
-By itself, any rule that we define does not do anything useful. The command Rule by itself is just a named
-container of the left and right hand sides of the rule. It becomes useful when combined with another
-command, which actually performs the rule substitution in an expression. This command has a format
-ReplaceAll[expr, rules], and a shorthand notation: <expr/.rules>. There can be more than one rule being
-applied, in which case they should normally be placed into a simple (not nested) list - we will see such
-examples later . If the rules are placed in a nested list, Mathematica interprets them differently - see
-Mathematica Help for details, and also below.
+
+    In[31]:= FullForm[ourrule]
+    Out[31]= Rule[a, b]
+
+4.2.1.2 How to make the rule apply: ReplaceAll function
+
+By itself, any rule that we define does not do anything useful. The command
+Rule by itself is just a named container of the left and right hand sides of
+the rule. It becomes useful when combined with another command, which actually
+performs the rule substitution in an expression. This command has a format
+ReplaceAll[expr, rules], and a shorthand notation: <expr/.rules>. There can be
+more than one rule being applied, in which case they should normally be placed
+into a simple (not nested) list - we will see such examples later . If the
+rules are placed in a nested list, Mathematica interprets them differently -
+see Mathematica Help for details, and also below.
+
 This is, for instance, how our rule will work on some test expression :
-Clear�f, a, b�;
-f�a� �. ourrule
-f�b�
+
+    In[32]:= Clear[f,a,b]; f[a] /. ourrule
+    Out[32]= f[b]
+
 or, which is the same,
-f�a� �. a � b
-f�b�
+
+    In[33]:= f[a] /. a->b
+    Out[33]= f[b]
+
 If we have a more complicated expression, where < a > happens more than once, it will be replaced in all
 places (when we use /., or ReplaceAll command):
-Clear�f, g, h�;
-f�a, g�a, h�a��� �. a � b
-f�b, g�b, h�b���
-� 4.2.1.3 The order in which ReplaceAll tries rules on parts of expressions
-Although this is not immediately obvious, often the rule application starts from the larger expression, and
-if it matches as a whole, then the subexpressions are not checked for further matches. This is so when the
-pattern (see discussion on patterns below) looks like h[x_] or similar. For example, in this case:
-Clear�a, q�;
-���a��� �. �x�� :� q�x�
-q���a���
+
+    In[35]:= Clear[f,g,h]; f[a, g[a, h[a]]] /. a->b
+    Out[35]= f[b, g[b, h[b]]]
+
+4.2.1.3 The order in which ReplaceAll tries rules on parts of expressions
+
+Although this is not immediately obvious, often the rule application starts
+from the larger expression, and if it matches as a whole, then the
+subexpressions are not checked for further matches. This is so when the
+pattern (see discussion on patterns below) looks like h[x_] or similar. For
+example, in this case:
+
+    In[36]:= Clear[a,q]; {{{a}}} /. {x_} :> q[x]
+    Out[36]= q[{{a}}]
+
 we will need to apply the rule several times to replace all the list braces with <q> - s :
-���a��� �. �x�� :� q�x� �. �x�� :� q�x�
-q�q��a���
-���a��� �. �x�� :� q�x� �. �x�� :� q�x� �. �x�� :� q�x�
-q�q�q�a���
+
+    In[37]:= {{{a}}} /. {x_} :> q[x] /. {x_} :> q[x]
+    Out[37]= q[q[{a}]]
+
+    In[38]:= {{{a}}} /. {x_} :> q[x] /. {x_} :> q[x] /. {x_} :> q[x]
+    Out[38]= q[q[q[a]]]
+
+
 But not in this case - here the pattern is just a symbol List :
-93
-���a��� �. List � q
-q�q�q�a���
-This behavior is rather logical, but in cases when a different order of rule substitution is desired, tech-
-niques are available to change it. We will discuss them
-later (see section 5.2.4.2).
-� 4.2.1.4 Associativity of rules
-As the previous example may have suggested, the application of rules is left - associative, meaning that in
-the expression < expr /. rule1 /. rule2 > is legitimate, and first the rule (or rules if this is a list of rules, see
-below) < rule1 > will be applied to < expr >, and then the rule (s) < rule2 > will be applied to the result.
-� 4.2.1.5 Locality of rules
-It is very important that the rules like the one above are local. This means that when the rule rewrites an
-object to which it applies into something else, it changes the copy of it, while the initial object remains
-unchanged. In particular, in the above example, an expression f[a] taken separately, did not change :
-f�a�
-f�a�
-This is the main difference between the rule and the function which performs a similar transformation - in
-the latter case a similar rule is defined globally (which means that it will be automatically tried by the
-kernel on any expression entered interactively or being otherwise evaluated). Essentially, this is the only
-fundamental difference between functions and lists of rules in Mathematica. For example, we can easily
-simulate the squaring function by a local rule:
-Clear�f�;
-�f�x�, f�y�, f�elephant�, f�3�� �. f�z�� :� z^2
-�x2, y2, elephant2, 9�
-� 4.2.1.6 Delayed rules - the RuleDelayed function
-I used this example to introduce two new ideas. First, we now have patterns on the left hand side of the
-rule - they are used to widen the class of objects to which the rule will apply. Second, we have used a new
-kind of rule (there are only two, and one we already considered before) - the one which uses the :> (colon
-- greater) sign instead of -> one. The literal equivalent of this is RuleDelayed[lhs,rhs] command:
-RuleDelayed�a, b�
-a � b
-As we can guess by the name, this corresponds to a delayed rule substitution - that is, the r.h.s. of the rule
-is evaluated only after the rule substitution takes place. Later we will consider cases where Rule or RuleDe-
-layed are more appropriate, in more detail, but in general the situation here is similar with the one with Set
-and SetDelayed assignment operators. This similarity is not accidental, but once again reflects the fact the
-assignment operators in Mathematica are just operators which create global rules.
-� 4.2.1.7 The difference between Rule and RuleDelayed
-94
-�
+
+    In[39]:= {{{a}}} /. List -> q
+    Out[39]= q[q[q[a]]]
+
+This behavior is rather logical, but in cases when a different order of rule
+substitution is desired, techniques are available to change it. We will
+discuss them later (see section 5.2.4.2).
+
+4.2.1.4 Associativity of rules
+
+As the previous example may have suggested, the application of rules is left -
+associative, meaning that in the expression < expr /. rule1 /. rule2 > is
+legitimate, and first the rule (or rules if this is a list of rules, see
+below) < rule1 > will be applied to < expr >, and then the rule (s) < rule2 >
+will be applied to the result.
+
+4.2.1.5 Locality of rules
+
+It is very important that the rules like the one above are local. This means
+that when the rule rewrites an object to which it applies into something else,
+it changes the copy of it, while the initial object remains unchanged. In
+particular, in the above example, an expression f[a] taken separately, did not
+change :
+
+    In[]:= f[a]
+    Out[]= f[a]
+
+This is the main difference between the rule and the function which performs a
+similar transformation - in the latter case a similar rule is defined globally
+(which means that it will be automatically tried by the kernel on any
+expression entered interactively or being otherwise evaluated). Essentially,
+this is the only fundamental difference between functions and lists of rules
+in Mathematica. For example, we can easily simulate the squaring function by a
+local rule:
+
+    In[40]:= Clear[f]; {f[x], f[y], f[elephant], f[3]} /. f[z_] :> z^2
+    Out[40]= {x ^ 2, y ^ 2, elephant ^ 2, 9}
+
+4.2.1.6 Delayed rules - the RuleDelayed function
+
+I used this example to introduce two new ideas. First, we now have patterns on
+the left hand side of the rule - they are used to widen the class of objects
+to which the rule will apply. Second, we have used a new kind of rule (there
+are only two, and one we already considered before) - the one which uses the
+:> (colon-greater) sign instead of -> one. The literal equivalent of this is
+RuleDelayed[lhs,rhs] command:
+
+    In[41]:= RuleDelayed[a,b]
+    Out[41]= a :> b
+
+As we can guess by the name, this corresponds to a delayed rule substitution -
+that is, the r.h.s. of the rule is evaluated only after the rule substitution
+takes place. Later we will consider cases where Rule or RuleDelayed are more
+appropriate, in more detail, but in general the situation here is similar with
+the one with Set and SetDelayed assignment operators. This similarity is not
+accidental, but once again reflects the fact the assignment operators in
+Mathematica are just operators which create global rules.
+
 4.2.1.7 The difference between Rule and RuleDelayed
-To illustrate a difference between Rule and RuleDelayed on one particular example, consider a model
-problem : given a list of elements, substitute every occurrence of the symbol < a > by a random number.
-Here is our sample list
-Clear�sample, a, b, c, d, e, f, g, h�;
-sample � �d, e, a, c, a, b, f, a, a, e, g, a�
-�d, e, a, c, a, b, f, a, a, e, g, a�
+
+To illustrate a difference between Rule and RuleDelayed on one particular
+example, consider a model problem : given a list of elements, substitute every
+occurrence of the symbol < a > by a random number.  Here is our sample list
+
+In[44]:= Clear[sample,a,b,c,d,e,f,g,h]; sample = {d,e,a,c,a,b,f,a,a,e,g,a}
+Out[44]= {d, e, a, c, a, b, f, a, a, e, g, a}
+
 Now, here is the rule - based solution using Rule :
-sample �. a � Random��
-�d, e, 0.177741, c, 0.177741, b, f, 0.177741, 0.177741, e, g, 0.177741�
+
+(* MY Change Random to RandomInteger *)
+
+    In[56]:= sample /. a -> RandomReal[]
+    Out[56]= {d, e, 0.813584, c, 0.813584, b, f, 0.813584, 0.813584, e, g, 0.813584}
+
 And here is the same using RuleDelayed :
-sample �. a :� Random��
-�d, e, 0.655171, c, 0.432888, b, f, 0.564996, 0.30648, e, g, 0.872856�
-We see that the numbers are the same in the first case and different in the second. This is because, in the
-first case, the r.h.s. of the rule has been evaluated before it was applied, once and for all. In the second
-case, the r.h.s. of the rule was re - evaluated every time the rule was applied. As a variation on the theme,
-suppose we want to substitute each <a> in the list by a list {a,num}, where <num> will be counting the
-occurrences of <a> in the list. Here is our attempt with Rule:
-n � 1;
-sample �. a � �a, n����
-�d, e, �a, 1�, c, �a, 1�, b, f, �a, 1�, �a, 1�, e, g, �a, 1��
+
+    In[57]:= sample /. a :> RandomReal[]
+    Out[57]= {d, e, 0.0673483, c, 0.21509, b, f, 0.489387, 0.509718, e, g, 0.23766}
+
+We see that the numbers are the same in the first case and different in the
+second. This is because, in the first case, the r.h.s. of the rule has been
+evaluated before it was applied, once and for all. In the second case, the
+r.h.s. of the rule was re - evaluated every time the rule was applied. As a
+variation on the theme, suppose we want to substitute each <a> in the list by
+a list {a,num}, where <num> will be counting the occurrences of <a> in the
+list. Here is our attempt with Rule:
+
+    In[58]:= n = 1; sample /. a->{a, n++}
+    Out[58]= {d, e, {a, 1}, c, {a, 1}, b, f, {a, 1}, {a, 1}, e, g, {a, 1}}
+
 Obviously this did not work as intended. And now with RuleDelayed :
-n � 1;
-sample �. a :� �a, n����
-�d, e, �a, 1�, c, �a, 2�, b, f, �a, 3�, �a, 4�, e, g, �a, 5��
-Clear�sample, n�;
-� 4.2.2 Rule substitution is not commutative
-� 4.2.2.1 Lists of rules
+
+    In[59]:= n = 1; sample /. a:>{a, n++}
+    Out[59]= {d, e, {a, 1}, c, {a, 2}, b, f, {a, 3}, {a, 4}, e, g, {a, 5}}
+
+4.2.2 Rule substitution is not commutative
+
+4.2.2.1 Lists of rules
+
 When we have more than just one rule to be tried on an expression, we place the rules in a list. For
 example:
-�a, b, c, d� �. �a � 1, b � 2, d � 4�
-�1, 2, c, 4�
-For all the rules to be tried on an expression, the list of rules has to be a flat list, that is, all the list elements
-should have a head Rule or RuleDelayed. Supplying a nested list of rules to Replace or ReplaceAll is not
-an error, but is interpreted as if we want to try all the sublists of rules separately on several copies of our
-original expression:
-95
-For all the rules to be tried on an expression, the list of rules has to be a flat list, that is, all the list elements
-should have a head Rule or RuleDelayed. Supplying a nested list of rules to Replace or ReplaceAll is not
-an error, but is interpreted as if we want to try all the sublists of rules separately on several copies of our
-original expression:
-�a, b, c, d� �. ��a � 1, b � 2�, �c � 3, d � 4��
-���1, 2, c, d�, �a, b, 3, 4���
-As a side note, there is nothing special about lists of rules with respect to lists of other Mathematica
-objects:
-FullForm��a � 5, a � 6��
-List�Rule�a, 5�, Rule�a, 6��
-� 4.2.2.1 Non-commutativity
-The result of the rule substitution depends in general on the order in which the rules are stored in the list,
-as the following example illustrates.
-Clear�a, f�;
-f�a� �. �a � 5, a � 6�
-f�a� �. �a � 6, a � 5�
-f�5�
-f�6�
-The reason for this is that once some rule has been applied to a given part of an expression, ReplaceAll
-goes to the next part of an expression and tries the rules on that next part. But even if we run ReplaceAll
-several times (there is a special command ReplaceRepeated related to this, which we will discuss shortly),
-the results will still be generally different for different orderings of rules in a list. This is because once a
-rule applies to a (part of) expression, this part is generally rewritten so that (some of) the rules in our list
-of rules which applied before will no longer apply, and vice versa.
-In any case, our final conclusion is that the rule application is not commutative, and the order of rules in
-the rule list does matter in general. For an extreme example of this, we will soon consider a rule-based
-factorial function, where different rule ordering will result in infinite iteration.
-� 4.2.3 An interplay between rules and evaluation process
-When working in Mathematica, it is important to remember that we never actually start from scratch, but
-always with a large built-in system of rules which connect together the built-in functions. This gives great
-flexibility in using these functions, since these system rules can be manipulated or overridden with the user-
-defined ones. On the other hand, one has to be more careful, because the rules (or function definitions
-and variable assignments, which are global rules) newly defined by the user, immediately start to interact
-with the built-in ones. The mentioned above non-commutativity of rules can make this interaction quite
-non-trivial. This often results in some unexpected or "erroneous" behavior, which many Mathematica
-users immediately proclaim as bugs, but which can be avoided just by getting a better understanding of
-how the system works.
-96
-� 4.2.3.1 When the rule applies, expression is evaluated
+
+    In[60]:= {a,b,c,d} /. {a->1, b->2, d->4}
+    Out[60]= {1, 2, c, 4}
+
+For all the rules to be tried on an expression, the list of rules has to be a
+flat list, that is, all the list elements should have a head Rule or
+RuleDelayed. Supplying a nested list of rules to Replace or ReplaceAll is not
+an error, but is interpreted as if we want to try all the sublists of rules
+separately on several copies of our original expression:
+
+    In[61]:= {a,b,c,d} /. {{a->1, b->2}, {c->3, d->4}}
+    Out[61]= {{1, 2, c, d}, {a, b, 3, 4}}
+
+As a side note, there is nothing special about lists of rules with respect to
+lists of other Mathematica objects:
+
+    In[62]:= FullForm[{a->5, a->6}]
+    Out[62]= List[Rule[a, 5], Rule[a, 6]]
+
+4.2.2.1 Non-commutativity
+
+The result of the rule substitution depends in general on the order in which
+the rules are stored in the list, as the following example illustrates.
+
+    In[63]:= Clear[a,f]; f[a] /. {a->5, a->6}
+    Out[63]= f[5]
+
+    In[64]:= Clear[a,f]; f[a] /. {a->6, a->5}
+    Out[64]= f[6]
+
+The reason for this is that once some rule has been applied to a given part of
+an expression, ReplaceAll goes to the next part of an expression and tries the
+rules on that next part. But even if we run ReplaceAll several times (there is
+a special command ReplaceRepeated related to this, which we will discuss
+shortly), the results will still be generally different for different
+orderings of rules in a list. This is because once a rule applies to a (part
+of) expression, this part is generally rewritten so that (some of) the rules
+in our list of rules which applied before will no longer apply, and vice
+versa.  In any case, our final conclusion is that the rule application is not
+commutative, and the order of rules in the rule list does matter in general.
+For an extreme example of this, we will soon consider a rule-based factorial
+function, where different rule ordering will result in infinite iteration.
+
+4.2.3 An interplay between rules and evaluation process
+
+When working in Mathematica, it is important to remember that we never
+actually start from scratch, but always with a large built-in system of rules
+which connect together the built-in functions. This gives great flexibility in
+using these functions, since these system rules can be manipulated or
+overridden with the user-defined ones. On the other hand, one has to be more
+careful, because the rules (or function definitions and variable assignments,
+which are global rules) newly defined by the user, immediately start to
+interact with the built-in ones. The mentioned above non-commutativity of
+rules can make this interaction quite non-trivial. This often results in some
+unexpected or "erroneous" behavior, which many Mathematica users immediately
+proclaim as bugs, but which can be avoided just by getting a better
+understanding of how the system works.
+
+4.2.3.1 When the rule applies, expression is evaluated
+
 As one example, consider a gamma-function of the symbolic argument:
-Clear�a�;
-Gamma�a�
-Gamma�a�
-Since the system does not know what < a > is, no one of the rules associated with the gamma - function
+
+In[66]:= Clear[a]; Gamma[a]
+Out[66]= Gamma[a]
+
+Since the system does not know what < a > is, no one of the rules associated with the gamma-function
 applies, and the input is just returned back. Let us now use the following rewrite rule :
-Gamma�a� �. a � 5
-24
+
+In[67]:= Gamma[a] /. a->5
+Out[67]= 24
+
 We see that as soon as the numerical (integer) value has been substituted, one of the built - in rules
-applied, producing the result. At the same time, for a number Π (for instance), there is no rule which
+applied, producing the result. At the same time, for a number π(for instance), there is no rule which
 forces Mathematica to compute the numerical value, and thus we have :
-Gamma�a� �. a � Pi
-Gamma�Π�
+
 If we want to compute a numerical value in this case, we can either do this :
-Gamma�a� �. a � N�Pi�
-2.28804
+
+In[68]:= Gamma[a] /. a->N[Pi]
+Out[68]= 2.28804
+
 Or, which is equivalent (with some tiny differences unimportant now), this :
-N�Gamma�a� �. a � Pi�
-2.28804
-(the N function computes a numerical value of its argument). What I want to stress is that the decision
-whether to keep say Gamma[5] as it is here or to substitute it by its numerical (well, integer) value is
-rather arbitrary in the sense that it is defined by certain (very sensible) Mathematica conventions but there
-is no first principle which tells which form of the answer is advantageous. In fact, in some cases I may
-wish to keep a Gamma[5] function in its unevaluated form. More generally, the whole advantage in using
-rule-based approach is that we don’t need a first principle to add rules for a new situation that we want to
-describe.
-This means not that Mathematica is unpredictable, but that the programs we write should not depend on
-features that are defined purely by conventions. In particular, in Mathematica one should always assume
-that all expressions may evaluate to something else. Thus, if some expression has to be kept unevaluated
-for some time, the programmer has to take care of it. On the other hand, if some expression must be
-evaluated completely (say, to a numerical value), once again the programmer has to ensure it.
-97
-� 4.2.3.2 Evaluation affects applicability of rules
+
+In[70]:= N[Gamma[a] /. a->Pi]
+Out[70]= 2.28804
+
+(the N function computes a numerical value of its argument). What I want to
+stress is that the decision whether to keep say Gamma[5] as it is here or to
+substitute it by its numerical (well, integer) value is rather arbitrary in
+the sense that it is defined by certain (very sensible) Mathematica
+conventions but there is no first principle which tells which form of the
+answer is advantageous. In fact, in some cases I may wish to keep a Gamma[5]
+function in its unevaluated form. More generally, the whole advantage in using
+rule-based approach is that we don’t need a first principle to add rules for a
+new situation that we want to describe.
+
+This means not that Mathematica is unpredictable, but that the programs we
+write should not depend on features that are defined purely by conventions. In
+particular, in Mathematica one should always assume that all expressions may
+evaluate to something else. Thus, if some expression has to be kept
+unevaluated for some time, the programmer has to take care of it. On the other
+hand, if some expression must be evaluated completely (say, to a numerical
+value), once again the programmer has to ensure it.
+
+4.2.3.2 Evaluation affects applicability of rules
+
 Consider now a different example:
-�f�Pi�, Sin�Pi�, Pi^2�
-�f�Pi�, Sin�Pi�, Pi^2� �. Pi � a
-�f�Π�, 0, Π2�
-�f�a�, 0, a2�
-Note that in the second input in the list, we will naively expect Sin[a] instead of 0 as an output, in the case
-when we apply the rule Pi -> a. The reason for this result being as it is can be understood easily, once we
-recall that the sign /. is just an abbreviation, and equivalently we can write the last input as
-ReplaceAll��f�Pi�, Sin�Pi�, Pi^2�, Pi � a�
-�f�a�, 0, a2�
-Now we recall the general evaluation strategy in Mathematica, where the subexpressions are normally
-evaluated before the expression itself. This means that once the evaluation process reached ReplaceAll
-command, our expression has been already transformed to the same form as the output of the first input
-(without rule substitution). Sin[Pi] evaluated to 0, and since 0 does not contain < Pi > any more and thus
-does not match the rule, no further substitution took place for this part of our expression. Once again, we
-can see the evaluation dynamics by using the Trace command:
-Trace��f�Pi�, Sin�Pi�, Pi^2� �. Pi � a�
-���Sin�Π�, 0�, �f�Π�, 0, Π2��, �f�Π�, 0, Π2� �. Π � a, �f�a�, 0, a2��
-These examples may give an impression that Mathematica is unstable with respect to bugs related to rule
-orderings. While it is true that many non-trivial bugs in the Mathematica programs are related to this
-issue, there are also ways to avoid them. As long as the rule or list of rules are always correct in the sense
-that either they represent exact identities (say, mathematical identities), or one can otherwise be sure that
-in no actual situation they, taken separately, will lead to an incorrect result, it should be fine.
-Bugs happen when rules considered "correct" give incorrect results in certain unforeseen situations, but this
-is also true for programs written within more traditional programming paradigms. Perhaps, the real differ-
-ence is that for more traditional programming techniques it is usually easier to restrict the program to
-"stay" in those "corners" of the problem parameter space where correct performance can be predicted or
-sometimes proven. I personally view the complications arising due to rule orderings as a (possibly inevita-
-ble) price to pay for having a very general approach to evaluation available.
-� 4.2.4 Rules and simple (unrestricted) patterns
+
+In[72]:= {f[Pi], Sin[Pi], Pi^2}
+Out[72]= {f[Pi], 0, Pi ^ 2}
+
+In[73]:= {f[Pi], Sin[Pi], Pi^2} /. Pi->a
+Out[73]= {f[a], 0, a ^ 2}
+
+Note that in the second input in the list, we will naively expect Sin[a]
+instead of 0 as an output, in the case when we apply the rule Pi -> a. The
+reason for this result being as it is can be understood easily, once we recall
+that the sign /. is just an abbreviation, and equivalently we can write the
+last input as
+
+In[74]:= ReplaceAll[{f[Pi], Sin[Pi], Pi^2}, Pi->a]
+Out[74]= {f[a], 0, a ^ 2}
+
+Now we recall the general evaluation strategy in Mathematica, where the
+subexpressions are normally evaluated before the expression itself. This means
+that once the evaluation process reached ReplaceAll command, our expression
+has been already transformed to the same form as the output of the first input
+(without rule substitution). Sin[Pi] evaluated to 0, and since 0 does not
+contain < Pi > any more and thus does not match the rule, no further
+substitution took place for this part of our expression.
+
+(* DOES NOT WORK Once again, we can
+see the evaluation dynamics by using the Trace command:
+
+n[75]:= Trace[{f[Pi], Sin[Pi], Pi^2} /. Pi->a]
+Out[75]= Trace[{f[a], 0, a ^ 2}]
+
+*)
+
+These examples may give an impression that Mathematica is unstable with
+respect to bugs related to rule orderings. While it is true that many
+non-trivial bugs in the Mathematica programs are related to this issue, there
+are also ways to avoid them. As long as the rule or list of rules are always
+correct in the sense that either they represent exact identities (say,
+mathematical identities), or one can otherwise be sure that in no actual
+situation they, taken separately, will lead to an incorrect result, it should
+be fine.  Bugs happen when rules considered "correct" give incorrect results
+in certain unforeseen situations, but this is also true for programs written
+within more traditional programming paradigms. Perhaps, the real difference is
+that for more traditional programming techniques it is usually easier to
+restrict the program to "stay" in those "corners" of the problem parameter
+space where correct performance can be predicted or sometimes proven. I
+personally view the complications arising due to rule orderings as a (possibly
+inevitable) price to pay for having a very general approach to evaluation
+available.
+
+4.2.4 Rules and simple (unrestricted) patterns
+
 Let us give some examples of how rules work with the simplest patterns.
-� 4.2.4.1 A simplest pattern and general pattern-matching strategy
-98
-�
+
 4.2.4.1 A simplest pattern and general pattern-matching strategy
+
 The simplest pattern of all, which we have already seen before, is just a single underscore <_>, and has a
 literal representation Blank[]:
-Blank��
-�
-This pattern represents any Mathematica expression. Let us take some sample Mathematica expression:
-x^y � Sin�z�
-Now we will use our simplest pattern to replace any element by, say, a symbol < a >:
-Clear�a, x, y, z, g, h�;
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �. � � a
-a
-This is not very exciting. What happened is that our entire expression (list) matched this pattern and then
-got replaced by < a > . Before we move forward, let me explain a bit how patterns work and why the
-substitution based on patterns is possible. The main ingredient for this is the uniform representation of
-Mathematica expressions by symbolic trees. Basically, when we try to match some (however complex)
-pattern with some expression, we are matching two trees. The tree that represents the pattern is also a
-legal Mathematica expression (patterns are as good Mathematica expressions as anything else), but with
-some branches or leaves replaced by special symbols like Blank[] (the underscore). For example:
-FullForm���^�� � Sin����
-Times�Power�Blank��, Blank���, Sin�Blank����
-This pattern tree (or, just pattern) will match some expression < expr > if they are identical modulo some
-parts of < expr > which can be "fit" in the placeholders such as Blank[], present in this pattern. In particu-
-lar, the pattern above will match any expression which is a product of something to a power of something
-else, and a Sine of something.
-� 4.2.4.2 Does the pattern match? The MatchQ function
+
+In[77]:= Blank[]
+Out[77]= _
+
+This pattern represents any Mathematica expression. Let us take some sample
+Mathematica expression - x^y*Sin[z]. Now we will use our simplest pattern to
+replace any element in it by, say, a symbol < a >:
+
+In[79]:= {x, y, x^y, Sin[z]} /. _ -> a
+Out[79]= a
+
+This is not very exciting. What happened is that our entire expression (list)
+matched this pattern and then got replaced by < a > . Before we move forward,
+let me explain a bit how patterns work and why the substitution based on
+patterns is possible. The main ingredient for this is the uniform
+representation of Mathematica expressions by symbolic trees. Basically, when
+we try to match some (however complex) pattern with some expression, we are
+matching two trees. The tree that represents the pattern is also a legal
+Mathematica expression (patterns are as good Mathematica expressions as
+anything else), but with some branches or leaves replaced by special symbols
+like Blank[] (the underscore). For example:
+
+In[80]:=  FullForm[(_^_)*Sin[_]]
+Out[80]= Times[Power[Blank[], Blank[]], Sin[Blank[]]]
+
+This pattern tree (or, just pattern) will match some expression < expr > if
+they are identical modulo some parts of < expr > which can be "fit" in the
+placeholders such as Blank[], present in this pattern. In particular, the
+pattern above will match any expression which is a product of something to a
+power of something else, and a Sine of something.
+
+4.2.4.2 Does the pattern match? The MatchQ function
+
 There is a very useful command that allows one to check whether or not there is a match between a given
 expression and a given pattern: MatchQ. It takes as arguments an expression and a pattern and returns
 True when pattern matches and False otherwise. For example:
-MatchQ�x^y � Sin�z�, ��^�� � Sin����
-True
-MatchQ�Exp��x^2�^2 � Sin�Cos�x��y�^2�, ��^�� � Sin����
-True
-MatchQ�x � Sin�z�, ��^�� � Sin����
-False
+
+    In[81]:= MatchQ[x^y*Sin[z], (_^_)*Sin[_]]
+    Out[81]= True
+
+    In[84]:= MatchQ[anything^(Pi-Pi*Cos[x])*Sin[a^b], (_^_)*Sin[_]]
+    Out[84]= True
+
+    In[85]:= MatchQ[x*Sin[], (_^_)*Sin[_]]
+    Out[85]= False
+
 It is important to understand that the pattern - matching (for simple, or unrestricted, patterns) is based
 completely on syntax, and not semantics, of the expressions being matched.
-99
-It is important to understand that the pattern - matching (for simple, or unrestricted, patterns) is based
-completely on syntax, and not semantics, of the expressions being matched.
-� 4.2.4.3 Pattern tags(names) and expression destructuring
-Now, while there is some value in just establishing the fact that some expression matches certain pattern, it
-becomes much more useful when we get access to the parts of this expression which match certain parts
-of the pattern, so that we can further process these parts. This is called expression destructuring, and is a
-very powerful pattern - related capability. For instance, in the above example we may wish to know which
-expressions were the base, the power and the argument of Sine. But to be able to do such destructuring,
-we need to somehow label the parts of the pattern. This is possible through the mechanism of pattern tags
-(or names) : we attach some symbol to the pattern part, and then this symbol stores the corresponding part
-of the actual expression matched, ready for further processing. This is how, for example, we can insert
-tags in our pattern:
-�base�^pwr�� � Sin�sinarg��
-The pattern tags can not be composite expressions - only true symbols (with the head Symbol).
-The presence of pattern tags does not change the matching in any way, it just gives us additional informa-
-tion. We will not obtain this information through MatchQ, however, since MatchQ just establishes the fact
-of the match. We will need a real rule application for that, since the rule will tell us what to do with these
-matched (sub) expressions. For example, here we will simply collect them in a list :
-�x^y � Sin�z�, Exp��x^2�^2 � Sin�Cos�x��y�^2�� �.
-�base�^pwr�� � Sin�sinarg�� � �base, pwr, sinarg�
-��x, y, z�, ��, �2 x2, Cos�x �y�2��
-What we just did is exactly a special case of destructuring. The parts that we tagged are now available for
-whatever operations we would like to perform.
-So, to summarize: whenever a pattern contains a part which is a special symbol like Blank[] (there are a
-few more like it, we will cover them shortly), possibly with a pattern tag attached, this means that the
-actual expression matched can contain in this place a rather arbitrary subexpression (how arbitrary,
-depends on the particular special symbol used). However, the parts which do not contain these symbols
-(multiplication, Power and Sin in our example above), have to be present in exactly the same way in both
-pattern and the expression, for them to match.
-One more important point about pattern tags is that the two identical pattern tags (symbols) in different
-parts of a pattern can not stand for different corresponding subexpressions in the expression we try to
-match. For example :
-MatchQ�a^a, b�^b��
-True
-MatchQ�a^c, b�^b��
-False
-100
-� 4.2.4.4 Example: any function of a single fixed argument
+
+4.2.4.3 Pattern tags(names) and expression destructuring
+
+Now, while there is some value in just establishing the fact that some
+expression matches certain pattern, it becomes much more useful when we get
+access to the parts of this expression which match certain parts of the
+pattern, so that we can further process these parts. This is called expression
+destructuring, and is a very powerful pattern - related capability. For
+instance, in the above example we may wish to know which expressions were the
+base, the power and the argument of Sine. But to be able to do such
+destructuring, we need to somehow label the parts of the pattern. This is
+possible through the mechanism of pattern tags (or names) : we attach some
+symbol to the pattern part, and then this symbol stores the corresponding part
+of the actual expression matched, ready for further processing. This is how,
+for example, we can insert tags in our pattern:
+
+    (base_^power_)*Sin[arg_]
+
+The pattern tags can not be composite expressions - only true symbols (with
+the head Symbol).  The presence of pattern tags does not change the matching
+in any way, it just gives us additional information. We will not obtain this
+information through MatchQ, however, since MatchQ just establishes the fact of
+the match. We will need a real rule application for that, since the rule will
+tell us what to do with these matched (sub) expressions. For example, here we
+will simply collect them in a list :
+
+In[87]:= {x^y*Sin[z], Exp[-x^2]^2*Sin[Cos[x-y]^2]} \
+            /. (base_^power_)*Sin[arg_] -> {base, power, arg}
+Out[87]= {{x, y, z}, {E, -2 x ^ 2, Cos[x - y] ^ 2}}
+
+What we just did is exactly a special case of destructuring. The parts that we
+tagged are now available for whatever operations we would like to perform.
+
+So, to summarize: whenever a pattern contains a part which is a special symbol
+like Blank[] (there are a few more like it, we will cover them shortly),
+possibly with a pattern tag attached, this means that the actual expression
+matched can contain in this place a rather arbitrary subexpression (how
+arbitrary, depends on the particular special symbol used). However, the parts
+which do not contain these symbols (multiplication, Power and Sin in our
+example above), have to be present in exactly the same way in both pattern and
+the expression, for them to match.
+
+One more important point about pattern tags is that the two identical pattern
+tags (symbols) in different parts of a pattern can not stand for different
+corresponding subexpressions in the expression we try to match. For example :
+
+In[88]:= MatchQ[a^a, b_^b_]
+Out[88]= True
+
+In[89]:= MatchQ[a^c, b_^b_]
+Out[89]= False
+
+4.2.4.4 Example: any function of a single fixed argument
+
 The following pattern will work on every function, but of the argument which has to literally be <x>:
-Clear�f, x�;
-f��x�
-It can be used for instance when we need to substitute the literal < x > by some value (say, 10) at every
-place where it appears as a single argument of some function. Consider now some list of expressions
-which we will use throughout this section to illustrate the construction of various patterns :
-Clear�x, y, z, g, h, a�;
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y��
-�x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
+
+In[90]:= Clear[f,x]; f_[x]
+Out[90]= f_[x]
+
+It can be used for instance when we need to substitute the literal < x > by
+some value (say, 10) at every place where it appears as a single argument of
+some function. Consider now some list of expressions which we will use
+throughout this section to illustrate the construction of various patterns :
+
+n[92]:= Clear[x,y,z,g,h,a];\
+         {x, Sin[x], x^2, x*y, g[y,x], Cos[y]}
+Out[92]= {x, Sin[x], x ^ 2, x y, g[y, x], Cos[y]}
+
 We now use our pattern :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-�f��x� � f�10��
-�x, Sin�10�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
-The replacement happened only in the second element of the list. To understand this, we have to recall the
-tree - like nature of Mathematica expressions and also that the rules application is based on expression
-syntax rather than semantics. Let us look at the FullForm of these expressions:
-FullForm��x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y���
-List�x, Sin�x�, Power�x, 2�, Times�x, y�, Plus�x, y�, g�y, x�, h�x, y, z�, Cos�y��
-We see that only the second list element contains < x > as a single argument, the next four have 2 argu-
-ments (and thus the pattern does not match), the next one has 3 arguments, and the last one has a single
-argument, but < y > instead of < x > .
-� 4.2.4.5 Any function of 2 arguments, but with the first fixed
+
+In[94]:= {x, Sin[x], x^2, x*y, g[y,x], Cos[y]} /. {f_[x] -> f[2]}
+Out[94]= {x, Sin[2], x ^ 2, x y, g[y, x], Cos[y]}
+
+The replacement happened only in the second element of the list. To understand
+this, we have to recall the tree - like nature of Mathematica expressions and
+also that the rules application is based on expression syntax rather than
+semantics. Let us look at the FullForm of these expressions:
+
+In[95]:= FullForm[{x, Sin[x], x^2, x*y, g[y,x], Cos[y]}]
+Out[95]= List[x, Sin[x], Power[x, 2], Times[x, y], g[y, x], Cos[y]]
+
+We see that only the second list element contains < x > as a single argument,
+the next four have 2 argu- ments (and thus the pattern does not match), the
+next one has 3 arguments, and the last one has a single argument, but < y >
+instead of < x > .
+
+4.2.4.5 Any function of 2 arguments, but with the first fixed
+
 Let us now develop other rules which will work selectively on different groups of these elements. First,
 let us build a rule which will work on elements with 2 arguments - this is easy :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-�f��x, z�� � f�10, z��
-�x, Sin�x�, 100, 10 y, 10 �y, g�y, x�, h�x, y, z�, Cos�y��
-We see that a new pattern is f_[x, z_], which means any function of two arguments, with an arbitrary
-second argument, but the first argument fixed to literal < x > . Notice that no substitution was performed
-for g[y,x], since here <x> is the second argument, while in the pattern it is the first one. In general, for
-simple patterns, the way to determine whether or not a given pattern will match a given expression is to
-consider the FullForm of both the pattern and the expression, and see whether the pattern expression has
-blanks in all places where it is different from the expression it has to match. The FullForm of the above
-pattern is
-101
-We see that a new pattern is f_[x, z_], which means any function of two arguments, with an arbitrary
-second argument, but the first argument fixed to literal < x > . Notice that no substitution was performed
-for g[y,x], since here <x> is the second argument, while in the pattern it is the first one. In general, for
-simple patterns, the way to determine whether or not a given pattern will match a given expression is to
-consider the FullForm of both the pattern and the expression, and see whether the pattern expression has
-blanks in all places where it is different from the expression it has to match. The FullForm of the above
-pattern is
-FullForm�f��x, z���
-Pattern�f, Blank����x, Pattern�z, Blank����
-To get a better idea of how the above pattern matched the expressions in our list, we may construct a
-different rule, which will show us which parts were matched :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, Cos�y�� �.
-�f��x, z�� � ��"f now", f�, �"z now", z���
-�x, Sin�x�, ��f now, Power�, �z now, 2��, ��f now, Times�, �z now, y��,
-��f now, Plus�, �z now, y��, g�y, x�, Cos�y��
-Returning to our previous rule for functions of 2 arguments, let us first fix the problem with the g[y, x]
-term so that it also matches. Our solution will be to add another rule, thus making a list of replacement
-rules :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-�f��x, z�� � f�10, z�, f��z�, x� � f�z, 10��
-�x, Sin�x�, 100, 10 y, 10 �y, g�y, 10�, h�x, y, z�, Cos�y��
-� 4.2.4.6 Combining 1, 2 and 3-argument cases together
-Now, let us change our rules such that in the Sin[x] the replacement will also take place - that is, now we
-want < x > to be replaced in functions of either one or two arguments. For this, we combine our very first
-rule with the last two:
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-�f��x� � f�10�, f��x, y�� � f�10, y�, f��z�, x� � f�z, 10��
-�x, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�x, y, z�, Cos�y��
+
+In[97]:= {x, Sin[x], x^2, x*y, g[y,x], Cos[y]} /. {f_[x, z_] -> f[2, z]}
+Out[97]= {x, Sin[x], 4, 2 y, g[y, x], Cos[y]}
+
+We see that a new pattern is f_[x, z_], which means any function of two
+arguments, with an arbitrary second argument, but the first argument fixed to
+literal < x > . Notice that no substitution was performed for g[y,x], since
+here <x> is the second argument, while in the pattern it is the first one. In
+general, for simple patterns, the way to determine whether or not a given
+pattern will match a given expression is to consider the FullForm of both the
+pattern and the expression, and see whether the pattern expression has blanks
+in all places where it is different from the expression it has to match. The
+FullForm of the above pattern is
+
+In[98]:= FullForm[{f_[x, z_] -> f[2, z]}]
+Out[98]= List[Rule[Pattern[f, Blank[]][x, Pattern[z, Blank[]]], f[2, z]]]
+
+
+(* SKIP - information flood 
+
+To get a better idea of how the above pattern matched the expressions in our
+list, we may construct a different rule, which will show us which parts were
+matched :
+
+...
+
+Returning to our previous rule for functions of 2 arguments, let us first fix
+the problem with the g[y, x] term so that it also matches. Our solution will be
+to add another rule, thus making a list of replacement rules : ...
+
+...
+
+4.2.4.6 Combining 1, 2 and 3-argument cases together
+
+Now, let us change our rules such that in the Sin[x] the replacement will also
+take place - that is, now we want < x > to be replaced in functions of either
+one or two arguments. For this, we combine our very first rule with the last
+two:
+
+...
+
 Finally, we would like to add a rule to include a function of 3 variables :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-�f��x� � f�10�, f��x, y�� � f�10, y�,
-f��z�, x� � f�z, 10�, f��x, y�, z�� � f�10, y, z��
-�x, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
-� 4.2.4.7 New pattern - building block - BlankSequence - and a caution
-Let me now introduce another pattern - building block similar to Blank[], which simplifies the construc-
-tion of many patterns. The literal command for this new pattern object is BlankSequence[]. Its literal
-equivalent is a double underscore sign < __ > :
-102
-BlankSequence��
-��
+
+...
+
+*)
+
+4.2.4.7 New pattern - building block - BlankSequence - and a caution
+
+Let me now introduce another pattern - building block similar to Blank[], which
+simplifies the construction of many patterns. The literal command for this new
+pattern object is BlankSequence[]. Its literal equivalent is a double
+underscore sign <__> :
+
+In[99]:= BlankSequence[]
+Out[99]= __
+
 This pattern element is used to represent a sequence of one or more elements in an expression. For exam-
 ple :
-�g�x, y, z�, g�p, q�, h�x, y�� �. g�t��� � �t�
-��x, y, z�, �p, q�, h�x, y��
+
+In[100]:= {g[x,y,z], g[p,q], h[x,y]} /. g[t__] -> {t}
+Out[100]= {{x, y, z}, {p, q}, h[x, y]}
+
 However, since this pattern - building block allows one to create patterns which match a much wider class
 of expressions, sometimes we get not what we would like to. Here, for instance, we want to add a literal
 <a> as an extra argument to all the functions in the list:
-�g�x, y, z�, h�x, y�� �. f��t��� �� f�t, a�
-�g�x, y, z�, h�x, y�, a�
+
+In[101]:= {g[x,y,z], h[x,y]} /. f_[t__] -> f[t,a]
+Out[101]= {g[x, y, z], h[x, y], a}
+
 Instead, < a > was added to the list itself. Why this happened is easy to see from the FullForm of our list :
-FullForm��g�x, y, z�, h�x, y���
-List�g�x, y, z�, h�x, y��
-We see that the head List matches < f_ > (which means any head), and t__ is matched by the interior of
-the list, since it is indeed a sequence of 2 elements - functions < g > and < h > . Thus, < a > has been
-added as a last argument to our list of functions, instead of being added to each function in the list. We see
-that our rule applied 1 level higher than we wanted - to the entire expression rather than parts. This is a
-common situation when ReplaceAll is used. In this case, the rules are first tried on the larger expressions,
-and if they match, the rules are applied to them, while subexpressions are not tried any more. There are
-several ways to change this behavior. One way is to create restricted patterns to make them more selective.
-Another way is to use the Replace command, which performs rule substitution in a different order.
-� 4.2.4.8 First look at conditional (restricted) patterns
-If we choose the first way, we have to modify our pattern such that the head List will not match. The thing
-we would like to do is to impose a condition that < f > in the pattern < f > is not the same as List. This is
-how it is done (more details on restricted patterns later) :
-�g�x, y, z�, h�x, y�� �. f��t��� �; f ��� List �� f�t, a�
-�g�x, y, z, a�, h�x, y, a��
+
+In[102]:= FullForm[{g[x,y,z], h[x,y]}]
+Out[102]= List[g[x, y, z], h[x, y]]
+
+We see that the head List matches < f_ > (which means any head), and t__ is
+matched by the interior of the list, since it is indeed a sequence of 2
+elements - functions < g > and < h > . Thus, < a > has been added as a last
+argument to our list of functions, instead of being added to each function in
+the list. We see that our rule applied 1 level higher than we wanted - to the
+entire expression rather than parts. This is a common situation when ReplaceAll
+is used. In this case, the rules are first tried on the larger expressions, and
+if they match, the rules are applied to them, while subexpressions are not
+tried any more. There are several ways to change this behavior. One way is to
+create restricted patterns to make them more selective.  Another way is to use
+the Replace command, which performs rule substitution in a different order.
+
+4.2.4.8 First look at conditional (restricted) patterns
+
+If we choose the first way, we have to modify our pattern such that the head
+List will not match. The thing we would like to do is to impose a condition
+that < f > in the pattern < f > is not the same as List. This is how it is done
+(more details on restricted patterns later) :
+
+In[103]:= {g[x,y,z], h[x,y]} /. f_[t__] /; f =!= List -> f[t,a]
+Out[103]= {g[x, y, z, a], h[x, y, a]}
+
 Now we see that it works as intended.
-� 4.2.4.9 Using Replace instead of ReplaceAll
+
+4.2.4.9 Using Replace instead of ReplaceAll
+
 If we choose to use the Replace command, here is a way to do the same :
-Replace��g�x, y, z�, h�x, y��, f��t��� �� f�t, a�, 1�
-�g�x, y, z, a�, h�x, y, a��
-The difference between Replace and ReplaceAll is that the former allows us to specify, in which level of
-expression the rules have to be applied. This gives a more detailed control over the application of rules.
-Here, for instance, we required that the rules be applied only at level 1, which means the level of list
-subexpressions - functions < g > and < h > .
-103
-The difference between Replace and ReplaceAll is that the former allows us to specify, in which level of
-expression the rules have to be applied. This gives a more detailed control over the application of rules.
-Here, for instance, we required that the rules be applied only at level 1, which means the level of list
-subexpressions - functions < g > and < h > .
-Another difference is that even when we indicate that the rules have to be applied to the whole expression,
-which we can do by using Replace[expr, rules, Infinity], the order in which the rules will be applied is
-different from that of ReplaceAll : now the rules will be applied in the depth - first manner, from the
-smallest (inner) subexpressions to larger (outer) ones. This behavior is often preferred, and then one has to
-use Replace. We will use this observation in later chapters.
-� 4.2.4.10 Rule within a rule, and a better catchall solution for our example
-Considering our initial problem, it is rather inconvenient to have so many rules for describing essentially
-some particular cases of a general situation : whenever literal < x > is an argument of some function,
-change it to < 10 > in that function. Let us see if we can write a more concise and general solution for this
-problem. The one that I suggest requires BlankSequence.
-Illustrating expression deconstruction
-To illustrate how it works here, we will now create a rule which will "deconstruct" our expressions accord-
-ing to this pattern :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List � ��"function", f�, �"args", �t���
-�x, ��function, Sin�, �args, �x���,
-��function, Power�, �args, �x, 2���,
-��function, Times�, �args, �x, y���,
-��function, Plus�, �args, �x, y���, ��function, g�, �args, �y, x���,
-��function, h�, �args, �x, y, z���, ��function, Cos�, �args, �y����
-The reason that I used a restricted pattern with a condition f =!= List is that otherwise the whole list will
-match, since its elements match the pattern __ :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� � ��"function", f�, �"args", �t���
-��function, List�,
-�args, �x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y����
-Restricted patterns we will cover later, for now just think of it as a pattern with a certain condition
-attached. At the same time, this example by itself shows that one has to be careful when defining patterns
-since the can match in more cases than we expect.
+
+In[106]:= Replace[{g[x,y,z], h[x,y]}, f_[t__] -> f[t,a], 1]
+Out[106]= {g[x, y, z, a], h[x, y, a]}
+
+The difference between Replace and ReplaceAll is that the former allows us to
+specify, in which level of expression the rules have to be applied. This gives
+a more detailed control over the application of rules.  Here, for instance, we
+required that the rules be applied only at level 1, which means the level of
+list subexpressions - functions < g > and < h > .
+
+Another difference is that even when we indicate that the rules have to be
+applied to the whole expression, which we can do by using Replace[expr, rules,
+Infinity], the order in which the rules will be applied is different from that
+of ReplaceAll : now the rules will be applied in the depth - first manner, from
+the smallest (inner) subexpressions to larger (outer) ones. This behavior is
+often preferred, and then one has to use Replace. We will use this observation
+in later chapters.
+
+4.2.4.10 Rule within a rule, and a better catchall solution for our example
+
+Considering our initial problem, it is rather inconvenient to have so many
+rules for describing essentially some particular cases of a general situation :
+whenever literal < x > is an argument of some function, change it to < 10 > in
+that function. Let us see if we can write a more concise and general solution
+for this problem. The one that I suggest requires BlankSequence.  Illustrating
+expression deconstruction
+
+To illustrate how it works here, we will now create a rule which will
+"deconstruct" our expressions according to this pattern :
+
+(* MY Grid does not work - how pprint? *)
+
+In[9]:= {Sin[x], x^2, g[y,x], Cos[y]} \
+        /. f_[t__] /; f =!= List -> {{"function", f}, {"args", {t}}}
+Out[9]= {{{function, Sin}, {args, {x}}}, 
+	{{function, Power}, {args, {x, 2}}}, 
+	{{function, g}, {args, {y, x}}}, 
+	{{function, Cos}, {args, {y}}}}
+
+The reason that I used a restricted pattern with a condition f =!= List is that
+otherwise the whole list will match, since its elements match the pattern __ :
+
+In[10]:= {Sin[x], x^2, g[y,x], Cos[y]} \
+         /. f_[t__] -> {{"function", f}, {"args", {t}}}
+Out[10]= {{function, List}, {args, {Sin[x], x ^ 2, g[y, x], Cos[y]}}}
+
+Restricted patterns we will cover later, for now just think of it as a pattern
+with a certain condition attached. At the same time, this example by itself
+shows that one has to be careful when defining patterns since the can match in
+more cases than we expect.
+
 The solution to our problem
+
 Returning to our initial problem, here is a solution:
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List :� �f�t� �. x � 10�
-�x, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
+
+In[11]:= {Sin[x], x^2, g[y,x], Cos[y]} \
+         /. f_[t__] /; f =!= List :> (f[t] /. x->10)
+Out[11]= {Sin[10], 100, g[y, 10], Cos[y]}
+
 Explanation
-1. Use parantheses to impose the correct precedance
-104
+
 1. Use parentheses to impose the correct precedence
-This solution is remarkable in several aspects. First of all, we have used a rule within a rule, and the inner
-rule we used in parentheses. The meaning of this is : once we found anything that matches the pattern of
-the "first" (or "outer") rule, make a replacement in this expression according to the "second", or "inner"
-rule. The first ("outer") rule acts here essentially as a filter for a second ("inner") one. Should we omit the
-parentheses, and we would not get the desired result :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List :� f�t� �. x � 10
-�10, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
-The reason this happened is that the rule application is left - associative. Thus, the first rule applied first,
-and was essentially idle, because it says by itself just f_[t__] /; f =!= List :> f[t], that is, replace an expres-
-sion of this form by itself :
-step1 � �x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List :� f�t�
-�x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
-The second rule then applied to < step1 >, and it says : replace < x > by < 10 > whenever < x > occurs.
-Thus, for example, the first element of the list, which is just < x > and is not an argument of any function,
-also got replaced.
-step1 �. x � 10
-�10, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
-However, if we use the parentheses, we ensure that the second rule is actually applied to the results
-"filtered" by the first rule.
-2. Use RuleDelayed to supply correct arguments to the inner rule
-The second subtlety here is that we used RuleDelayed instead of Rule for the first (outer) rule. It is easy to
-see that if we don’ t , we will not get a desired result :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List �� �f�t� �. x � 10�
-�x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
-The reason is that in the case of Rule, the r.h.s. of the rule is evaluated before the rule is substituted.
-Recalling the general strategy of Mathematica evaluation, the inner rule will be evaluated before the outer
-one (this is what parentheses ensure). But by that time, the literal < t > in the outer rule has yet no relation
-to the matched parts of the list whatsoever, and just remains the literal < t > . Thus, the rule < f[t] /. x ->
-10 > is completely idle and evaluates to f[t]. This results then in just the first rule f_[t__] /; f =!= List
-->f[t], which again is idle.
+
+This solution is remarkable in several aspects. First of all, we have used a
+rule within a rule, and the inner rule we used in parentheses. The meaning of
+this is : once we found anything that matches the pattern of the "first" (or
+"outer") rule, make a replacement in this expression according to the "second",
+or "inner" rule. The first ("outer") rule acts here essentially as a filter for
+a second ("inner") one.  (* SKIP Should we omit the parentheses, and we would
+not get the desired result :
+
+...
+
+The reason this happened is that the rule application is left - associative.
+Thus, the first rule applied first, and was essentially idle, because it says
+by itself just f_[t__] /; f =!= List :> f[t], that is, replace an expression of
+this form by itself :
+
+...
+
+The second rule then applied to < step1 >, and it says : replace < x > by < 10>
+whenever < x > occurs.  Thus, for example, the first element of the list, which
+is just < x > and is not an argument of any function, also got replaced.
+
+...
+
+However, if we use the parentheses, we ensure that the second rule is actually
+applied to the results "filtered" by the first rule.
+
+*)
+
+2. Use RuleDelayed to supply correct arguments to the inner rule The second
+subtlety here is that we used RuleDelayed instead of Rule for the first (outer)
+rule. It is easy to see that if we don’ t , we will not get a desired result :
+
+In[15]:= {Sin[x], x^2, g[y,x], Cos[y]} \
+         /. f_[t__] /; f =!= List -> (f[t] /. x->10)
+Out[15]= {Sin[x], x ^ 2, g[y, x], Cos[y]}
+
+The reason is that in the case of Rule, the r.h.s. of the rule is evaluated
+before the rule is substituted.  Recalling the general strategy of Mathematica
+evaluation, the inner rule will be evaluated before the outer one (this is what
+parentheses ensure). But by that time, the literal < t > in the outer rule has
+yet no relation to the matched parts of the list whatsoever, and just remains
+the literal < t > . Thus, the rule < f[t] /. x -> 10 > is completely idle and
+evaluates to f[t]. This results then in just the first rule f_[t__] /; f =!=
+List ->f[t], which again is idle.
+
+(* SKIP
+
 3. Confirmation : use Trace command
 This description can be confirmed with the Trace command:
-105
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List �� �f�t� �. x � 10� �� Trace
-���f�t� �. x � 10, f�t��,
-f��t��� �; f ��� List � f�t�, f��t��� �; f ��� List � f�t��,
-�x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List � f�t�, �List ��� List, False�,
-�Sin ��� List, True�, �Power ��� List, True�,
-�Times ��� List, True�, �Plus ��� List, True�,
-�g ��� List, True�, �h ��� List, True�, �Cos ��� List, True�,
-�x, Sin�x�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y���
+
+...
+
 If we use RuleDelayed however, the r.h.s of the outer rule (which includes the inner rule) will not be
 evaluated until some match has been found for the outer rule. This will allow the inner rule to operate on
 expressions matched by the outer rule.
-� 4.2.4.11 Rule vs. RuleDelayed - when which one is appropriate
-When RuleDelayed is better
-In general, it is usually safer to use RuleDelayed in cases when the r.h.s. of the rule is not constant. For
-instance, all our replacements just discussed would have been totally spoiled had the parts of the pattern
-definition tags (such as f in f_, t in t__, etc) have any global values. This is, for instance, one of the rules
-we used above, but with some pattern tags having some global values before the application of rule:
-f � "Global function";
-t � "global value";
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List � ��"function", f�, �"args", �t���
-�x, ��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value���,
-��function, Global function�, �args, �global value����
+
+*)
+
+4.2.4.11 Rule vs. RuleDelayed - when which one is appropriate
+
+When RuleDelayed is better In general, it is usually safer to use RuleDelayed
+in cases when the r.h.s. of the rule is not constant. For instance, all our
+replacements just discussed would have been totally spoiled had the parts of
+the pattern definition tags (such as f in f_, t in t__, etc) have any global
+values. (* SKIP This is, for instance, one of the rules we used above, but with some
+pattern tags having some global values before the application of rule:
+
+...
+
 Once again, this is because the r.h.s. of the rule has been evaluated before any match could have taken
 place. To be safe, use RuleDelayed :
-106
-f � "Global function";
-t � "global value";
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f��t��� �; f ��� List :� ��"function", f�, �"args", �t���
-�x, ��function, Sin�, �args, �x���,
-��function, Power�, �args, �x, 2���,
-��function, Times�, �args, �x, y���,
-��function, Plus�, �args, �x, y���, ��function, g�, �args, �y, x���,
-��function, h�, �args, �x, y, z���, ��function, Cos�, �args, �y����
-Clear�f, t�;
+
+...
+
+*)
+
 When Rule is better
-There are of course cases when Rule has to be used instead - this is when the r.h.s. of the rule is a con-
-stant. For example, say we want to substitute every even number in a list by the value of the integral of
-the gaussian over the half-line. This is how long it takes with Rule (for this size of the list)
-Range�50� �. ��? EvenQ � Integrate�Exp��x^2�, �x, 0, Infinity�� ��
-Short �� Timing
-�0.101, �1,
-Π
-2 , 3, �44�,
-Π
-2 , 49,
-Π
-2 ��
+
+There are of course cases when Rule has to be used instead - this is when the
+r.h.s. of the rule is a constant. For example, say we want to substitute every
+even number in a list by the value of the integral of the gaussian over the
+half-line. This is how long it takes with Rule (for this size of the list)
+
+    In[21]:= Range[50] /. _?EvenQ -> Integrate[Exp[-x^2], {x,0,Infinity}]; //Timing
+    Out[21]= {0.0255149, Null}
+
 And now with RuleDelayed :
-Range�50� �. ��? EvenQ :� Integrate�Exp��x^2�, �x, 0, Infinity�� ��
-Short �� Timing
-�2.113, �1,
-Π
-2 , 3, �44�,
-Π
-2 , 49,
-Π
-2 ��
-What happens here is that in one case, the integral is computed exactly once, while in the other it is recom-
-puted over and over again. Once again, the situation here is very similar to the one with immediate and
-delayed assignments Set and SetDelayed.
-� 4.2.4.12 Patterns testing heads of expressions
-Let us again return to our original list of expressions. We can also construct more stringent rules which
-will operate only on certain functions, for example :
+
+    In[22]:= Range[50] /. _?EvenQ :> Integrate[Exp[-x^2], {x,0,Infinity}]; //Timing
+    Out[22]= {0.526691, Null}
+
+What happens here is that in one case, the integral is computed exactly once,
+while in the other it is recomputed over and over again. Once again, the
+situation here is very similar to the one with immediate and delayed
+assignments Set and SetDelayed.
+
+4.2.4.12 Patterns testing heads of expressions
+
+Let us again return to our original list of expressions. We can also construct
+more stringent rules which will operate only on certain functions, for example
+:
+
 �x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
 f�Sin � �f �. x � 10�
 �x, Sin�10�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
