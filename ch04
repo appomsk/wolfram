@@ -753,116 +753,156 @@ Let us again return to our original list of expressions. We can also construct
 more stringent rules which will operate only on certain functions, for example
 :
 
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f�Sin � �f �. x � 10�
-�x, Sin�10�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f�Plus � �f �. x � 10�
-�x, Sin�x�, x2, x y, 10 �y, g�y, x�, h�x, y, z�, Cos�y��
-107
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-f�Power � �f �. x � 10�
-�x, Sin�x�, 100, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
+    In[1]:= {x, Sin[x], x^2, x*y, x+y, g[y,x], h[x,y,z], Cos[y]} \
+	    /. f_Sin :> (f /. x->10)
+    Out[1]= {x, Sin[10], x ^ 2, x y, x + y, g[y, x], h[x, y, z], Cos[y]}
+
+    In[2]:= {x, Sin[x], x^2, x*y, x+y, g[y,x], h[x,y,z], Cos[y]} \
+	    /. f_Plus :> (f /. x->10)
+    Out[2]= {x, Sin[x], x ^ 2, x y, 10 + y, g[y, x], h[x, y, z], Cos[y]}
+
+
 We have introduced another useful part of the pattern - the part which checks the Head. Although strictly
 speaking such patterns should be already considered restricted patterns and this topic we did not cover yet,
 this construction is purely syntactic and thus still appropriate for our present discussion. The idea is that
 the pattern x_head will match any single expression with the Head < head > .
-� 4.2.4.13 On one pitfall of pattern - building
+
+4.2.4.13 On one pitfall of pattern - building
+
 In the first case, by writing the pattern as above, we did not save much:
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-Sin�x� � Sin�10�;
-�x, Sin�10�, x2, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
+
+In[4]:= {x, Sin[x], x^2, x*y, x+y, g[y,x], h[x,y,z], Cos[y]} \
+        /. Sin[x] :> Sin[10]
+Out[4]= {x, Sin[10], x ^ 2, x y, x + y, g[y, x], h[x, y, z], Cos[y]}
+
 But in the second case, we have avoided one of the pitfalls associated with the pattern - building :
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-Plus�t��� � �Plus�t� �. x � 10�
-�10, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
+
+In[5]:= {x, Sin[x], x^2, x*y, x+y, g[y,x], h[x,y,z], Cos[y]} \
+        /. Plus[t__] :> (Plus[t] /. x->10)
+Out[5]= {10, Sin[10], 100, 10 y, 10 + y, g[y, 10], h[10, y, z], Cos[y]}
+
 What happened? This kind of behavior creates nightmares for those starting to fool around with rules and
 patterns. This is generally beyond the scope of the present discussion, but what happened here is that
 pattern itself evaluated before it had any chance to match in its original form:
-Plus�t���
-t��
+
+In[6]:= Plus[t__]
+Out[6]= t__
+
 The real pattern that was matched then was not Plus[t__] but just t__, with the above result (RuleDelayed
 does not evaluate the r.h.s. of the rule, but it of course does evaluate the l.h.s). The solution in such cases
 is to use the HoldPattern command:
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-HoldPattern�Plus�t���� � �Plus�t� �. x � 10�
-�x, Sin�x�, x2, x y, 10 �y, g�y, x�, h�x, y, z�, Cos�y��
+
+(* DOES NOT WORK *)
+
+In[7]:= {x, Sin[x], x^2, x*y, x+y, g[y,x], h[x,y,z], Cos[y]} \
+        /. HoldPattern[Plus[t__]] :> (Plus[t] /. x->10)
+Out[7]= {10, Sin[10], 100, 10 y, 10 + y, g[y, 10], h[10, y, z], Cos[y]}
+
 Now it works as intended. The same problem is with the Power function, which also evaluates to its
 argument given a single argument:
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-Power�t��� � �Power�t� �. x � 10�
-�10, Sin�10�, 100, 10 y, 10 �y, g�y, 10�, h�10, y, z�, Cos�y��
+
+...
+
 The correct way :
-108
-�x, Sin�x�, x^2, x � y, x��y, g�y, x�, h�x, y, z�, Cos�y�� �.
-HoldPattern�Power�t���� � �Power�t� �. x � 10�
-�x, Sin�x�, 100, x y, x �y, g�y, x�, h�x, y, z�, Cos�y��
+
+...
+
 The uses of HoldPattern and related things will be covered systematically later. Returning to our current
 topic, we see that the forms x_head and head[x__] are similar but not entirely equivalent.
-� 4.2.4.14 Matching expressions with any number of elements - BlankNullSequence
+
+(* END DOES NOT WORK *)
+
+4.2.4.14 Matching expressions with any number of elements - BlankNullSequence
+
 The other source of inequivalence between these two forms can be seen on the following example :
-�f�x�, g�x�, f�x, y�, Sin�x��y�, f��, f�x, y, z�� �. f�t��� :� a � f�t�
-�a f�x�, g�x�, a f�x, y�, Sin�x �y�, f��, a f�x, y, z��
+
+In[8]:= {f[x], g[x], f[x,y], Sin[x+y], f[], f[x,y,z]} /. f[t__] :> a*f[t]
+Out[8]= {a f[x], g[x], a f[x, y], Sin[x + y], f[], a f[x, y, z]}
+
 Here, we multiplied by < a > all expressions with head < f > . However, the one with no arguments was
 missed. This does not happen for the <x_f> variant below - here all occurrences of <f> are incorporated,
 with or without arguments.
-�f�x�, g�x�, f�x, y�, Sin�x��y�, f��, f�x, y, z�� �. x�f :� a � x
-�a f�x�, g�x�, a f�x, y�, Sin�x �y�, a f��, a f�x, y, z��
+
+In[9]:= {f[x], g[x], f[x,y], Sin[x+y], f[], f[x,y,z]} /. x_f :> a*x
+Out[9]= {a f[x], g[x], a f[x, y], Sin[x + y], a f[], a f[x, y, z]}
+
 Notice by the way that the < x > in the pattern <x_f> has nothing to do with the global <x> (present for
 example in the expressions in the list), but rather has to be treated as a local variable whose scope is
 limited to the rule. Other pattern tags are usually local for RuleDelayed but global for Rule, as we already
 discussed.
+
 To make a structural pattern f[t__] "catch up" with the <x_f> one, we need to introduce another (last in
 this category) pattern-building block: <BlankNullSequence>, which has a triple underscore as
 abbreviation:
-BlankNullSequence��
-���
+
+In[10]:= BlankNullSequence[]
+Out[10]= ___
+
 Its purpose is to match a sequence of zero or more expressions. Check now :
-�f�x�, g�x�, f�x, y�, Sin�x��y�, f��, f�x, y, z�� �. f�t���� :� a � f�t�
-�a f�x�, g�x�, a f�x, y�, Sin�x �y�, a f��, a f�x, y, z��
+
+In[11]:= {f[x], g[x], f[x,y], Sin[x+y], f[], f[x,y,z]} /. f[t___] :> a*f[t]
+Out[11]= {a f[x], g[x], a f[x, y], Sin[x + y], a f[], a f[x, y, z]}
+
 Now the results of the rule substitutions for this input are the same.
-� 4.2.4.15 A bit more useful example
-To conclude this section, let us consider a bit more useful example of rule application : we will consider
-some polynomial of a single variable < x >, break it into a list of terms, and then replace all even powers
-of < x > by some object, say a literal < a > . Consider for example :
-Clear�testexpr, x, a�;
-testexpr � Expand��1��x�^10�
-1 �10 x �45 x2 �120 x3 �210 x4 �252 x5 �210 x6 �120 x7 �45 x8 �10 x9 �x10
+
+(* MY: “A lot of people look at C++ and want to understand every dark corner.
+This is what you do if you want to be a compiler writer, but most people should
+look at what is the easiest way to write a good solution for their problem,"
+said Stroustrup. *)
+
+4.2.4.15 A bit more useful example
+
+To conclude this section, let us consider a bit more useful example of rule
+application : we will consider some polynomial of a single variable < x >,
+break it into a list of terms, and then replace all even powers of < x > by
+some object, say a literal < a > . Consider for example :
+
+In[14]:= Clear[e,x,a]; e = Expand[(1+x)^6]
+Out[14]= 1 + 6 x + 15 x ^ 2 + 20 x ^ 3 + 15 x ^ 4 + 6 x ^ 5 + x ^ 6
+
 It is very easy to get a list of individual terms - let us look at the FullForm of this expression :
-109
-FullForm�testexpr�
-Plus�1, Times�10, x�, Times�45, Power�x, 2��, Times�120, Power�x, 3��,
-Times�210, Power�x, 4��, Times�252, Power�x, 5��, Times�210, Power�x, 6��,
-Times�120, Power�x, 7��, Times�45, Power�x, 8��, Times�10, Power�x, 9��, Power�x, 10��
+
+> FullForm@e
+
 All that is needed in this particular case (but keep in mind that this is not a general solution, since it
 exploits the absence of any sums inside the terms) is to Replace the head Plus by head List :
-testexpr �. Plus � List
-�1, 10 x, 45 x2, 120 x3, 210 x4, 252 x5, 210 x6, 120 x7, 45 x8, 10 x9, x10�
+
+> e ./ Plus -> List
+
 Now we replace all even powers of < x > by < a > . Here we will go a little ahead of time and use a
 restricted pattern x^_?EvenQ. For now, let me just say that the pattern x^_ would mean any power of x
 (except perhaps just x, as it is represented differently), and x^_?EvenQ means any even power.
-testexpr �. Plus � List �. x^���? EvenQ� �� a
-�1, 10 x, 45 a, 120 x3, 210 a, 252 x5, 210 a, 120 x7, 45 a, 10 x9, a�
+
+In[18]:= e /. Plus -> List /. x^(_?EvenQ) -> a
+Out[18]= {1, 6 x, 15 a, 20 x ^ 3, 15 a, 6 x ^ 5, a}
+
 We can also, for instance, apply some function < f > to these even powers :
-Clear�f, x, y�;
-testexpr �. x^�y��? EvenQ� :� f�x^y�
-1 �10 x �120 x3 �252 x5 �120 x7 �10 x9
-�45 f�x2� �210 f�x4� �210 f�x6� �45 f�x8� �f�x10�
-The zero - th power (which is, the x - independent term) was missed. To account for it is not completely
-trivial. Here is the solution for this particular case - it contains too many details not covered yet so I will
-postpone the explanation.
-Clear�f, x, y, a, b, newexpr�;
-newexpr � Replace�testexpr,
-��a : � : 1� � x^�y��? EvenQ� � a � f�x^y�, a� �; FreeQ�a, x� � f�a��, 1�
-10 x �120 x3 �252 x5 �120 x7 �10 x9 �f�1�
-�45 f�x2� �210 f�x4� �210 f�x6� �45 f�x8� �f�x10�
-The function < f > can of course be anything. For instance, we may consider a shift by a constant < b > :
-newexpr �. �f�z�^k�� � �z��b�^k, f�1� � 1�
-1 �10 x �120 x3 �252 x5 �120 x7 �10 x9 �45 ��b �x�2
-�210 ��b �x�4 �210 ��b �x�6 �45 ��b �x�8 ���b �x�10
-Clear�testexpr, newexpr�;
-110
-� 4.2.5 Applying rules repeatedly - the ReplaceRepeated function
+
+In[19]:= Clear[f,x,y]; e /. x^(y_?EvenQ) :> f[x^y]
+Out[19]= 1 + 6 x + 20 x ^ 3 + 6 x ^ 5 + f[x ^ 6] + 15 f[x ^ 2] + 15 f[x ^ 4]
+
+(* SKIP - Brainf@cking *)
+
+The zero - th power (which is, the x - independent term) was missed. To account
+for it is not completely trivial. Here is the solution for this particular case
+- it contains too many details not covered yet so I will postpone the
+explanation.
+
+In[20]:= Clear[f,x,y,a,b,ee];
+In[21]:= ee = Replace[e, {(a:_:1)*x^(y_?EvenQ) :> a*f[x^y], a_ \
+         /; FreeQ[a,x] :> f[a]}, 1]
+Out[21]= 6 x + 20 x ^ 3 + 6 x ^ 5 + f[1] + f[x ^ 6] + 15 f[x ^ 2] + 15 f[x ^ 4]
+
+
+The function < f > can of course be anything. For instance, we may consider a
+shift by a constant < b > :
+
+...
+
+END SKIP *)
+
+4.2.5 Applying rules repeatedly - the ReplaceRepeated function
+
 Since any given rule or a list of rules are normally tried on any element of expression just once, they don’ t
 "keep track" of changes in an expression caused by their own actions. One may create more interesting
 constructs by repeatedly applying a rule or list of rules to an expression until it stops changing. By doing
