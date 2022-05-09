@@ -1,0 +1,357 @@
+В основе типов данных в Математике лежит несуразность. Несуразность делит все
+типы на две больших части - на типы, в отношении которых предикат AtomQ дает
+ответ True и те, в отношении которых он дает ответ False. Типичные - числа и
+списки - ПРИМЕРЫ.
+
+Несуразность, которая объясняется, как и подавляющее большинство остальных
+несуразностей в программном обеспечении, историческим наследием, состоит в
+том, что - AtomQ@<|a->1, b->2|>, AtomQ@"abc", числовые и разряженные массивы.
+
+Название - цельные (правильнее "атомкьюшные") и сборные ("лиспишные").
+
+Non-Atoms have Part-s and Depth more than 1. BUT not Arrays - they have parts
+and SparcedArray has Depth more than 1. And Associations has Parts and Depth -
+2. 
+
+SO ONLY AtomQ
+
+===
+
+HEAD
+
+Lisp. Динамические типы данных.
+
+But Mathematica expressions and lists are NOT lisp lists. Appending and
+Prepending are the same. Check Insert-ing.
+
+Head[Data] == Type --> <Type>Q[Data]. BUT not to other side - NumberQ, VectorQ, ArrayQ...
+
+===
+
+Expressions
+
+Head, Part. Then FullForm, TreeForm (evaluation and HoldForm later).
+
+Best - Defer@FullForm[1 + 3 + x*3 + x]
+
+Level, Depth. 
+
+Apply List to Expression. List@[x+y*Sin[1]]  <-- IT DOES NOT WORK!
+List@@ works, but change only Plus. Some thoughts are needed
+
+===
+
+
+Evaluation
+
+tutorial/Evaluation              (* SHORT *)
+tutorial/EvaluationOfExpressions (* A LOT OF INFORMATION *)
+
+The two most central concepts in the Wolfram Language are probably expressions and evaluation. "Expressions" discusses how all the different kinds of objects that the Wolfram Language handles are represented in a uniform way using expressions. This tutorial describes how all the operations that the Wolfram Language can perform can also be viewed in a uniform way as examples of evaluation.
+
+The Wolfram Language follows the principle of applying definitions until the
+result it gets no longer changes. This means that if you take the final result
+that the Wolfram Language gives, and enter it as Wolfram Language input, you
+will get back the same result again. (There are some subtle cases discussed in
+"Controlling Infinite Evaluation" in which this does not occur.) If you type
+in a result from the Wolfram Language, you get back the same expression
+again... (Чтоб точно - InputForm)
+
+One might think that the Wolfram Language should somehow automatically reduce
+all mathematical expressions to a single standard canonical form. With all but
+the simplest kinds of expressions, however, it is quite easy to see that you
+do not want the same standard form for all purposes. (* So there are Expand,
+Factor... *)
+
+Although it is clear that you do not always want expressions reduced to the same standard form, you may wonder whether it is at least possible to reduce all expressions to some standard form. 
+
+There is a basic result in the mathematical theory of computation which shows that this is, in fact, not always possible. You cannot guarantee that any finite sequence of transformations will take any two arbitrarily chosen expressions to a standard form.
+
+In a sense, this is not particularly surprising. If you could in fact reduce all mathematical expressions to a standard form, then it would be quite easy to tell whether any two expressions were equal. The fact that so many of the difficult problems of mathematics can be stated as questions about the equality of expressions suggests that this can in fact be difficult. 
+
+...
+
+The Wolfram System provides various ways to "trace" the evaluation process, as
+discussed in "Tracing Evaluation"...
+
+While most built-in Wolfram Language functions follow the standard evaluation
+procedure, some important ones do not. For example, most of the Wolfram
+Language functions associated with the construction and execution of programs
+use non-standard evaluation procedures. In typical cases, the functions either
+never evaluate some of their arguments, or do so in a special way under their
+own control. - Set, If, And, Do, Plot, Function...
+
+3 attributes and 5 functions for misc holding...
+
+...
+
+===
+
+Example
+
+Random Walk
+
+dirs = {-1, 1};
+ListLinePlot[Accumulate[RandomChoice[dirs, 100000]]]
+
+===
+
+In[10]:= 1.000000000000001 == 1.000000000000002 (they are both equal 1.0 -
+machine precision)
+
+Out[10]= True
+
+(? For different versions different - earlier 7 binari digits compared)
+
+===
+
+
+Numbers - 4 Integer, Rational, Real, Complex - NumberQ
+
+===
+
+Example
+
+pts = RandomVariate[NormalDistribution[0, 1], {2500, 2}];
+ListPlot[pts, AspectRatio → Automatic]
+
+---
+
+Random numbers, choices, distributions - A LOT!
+
+---
+
+Create a function to
+generate the nth Smarandache-Wellin number, formed by concatenating the
+digits of successive primes. The first such number is 2, then 23, then 235,
+followed by 2357, 235711, and so on. Numerous open questions exist about
+these numbers: for example it is not known if an infinite numbejr of them
+are prime
+
+---
+
+Perfect Numbers
+
+Table[ 2^(p - 1)*(2^p - 1), {p, {2, 3, 5, 7, 13, 17, 19, 31}}]
+
+perfectQ[n_] := Total[Divisors[n]] == 2 n
+
+---
+
+Array [<FUNCTION>, ...]
+
+Table[<EXPRESSION, ...]
+
+Array[f, 5] == Table[f[i], {i, 5}]
+
+---
+
+    mat = ConstantArray[1, {5, 5}];
+
+    mat[[{1, –1}, All]] = 0;
+    mat[[All, {1, –1}]] = 0;
+    MatrixForm[mat]
+
+---
+
+Make a histogram of the frequencies of the leading digit in the first 10 000
+Fibonacci numbers. The resulting distribution is an instance of Benford’s
+Law, which concerns the frequency of the leading digits in many kinds of
+data. The phenomenon, whereby a 1 occurs about 30% of the time, a 2
+occurs about 17.6% of the time, and so on, has been shown to occur in
+well-known numerical sequences, population counts, death rates, Fibonacci
+numbers, and many more, and has even been used to detect corporate and
+tax fraud. (* 10000 - easy, 100000 - no *)
+
+    First /@ IntegerDigits /@ Array[Fibonacci, 100000] // Histogram
+
+The leading digits problem in Exercise 7, Section 3.3, is an example of
+Benford’s law, a phenomenon known to exist in many different types of data
+sets, including population numbers, lengths of rivers, street addresses, and
+most famously, tax returns and corporate financial statements; see Nigrini
+(2012), Hill (1998), and especially the blog by Terrence Tao (2009) on
+Benford’s law, Zipf’s law, and Pareto distributions.
+
+---
+
+Patterns are objects in Mathematica that represent classes of expressions.
+Pattern matching is the mechanism that Mathematica uses to determine if a
+particular rule should be applied to a given expression. Using patterns, you can
+set up your own functions to only operate on certain classes of expressions,
+that is, for argument checking. They can also used to extract parts of an
+expression based on a criteria of interest.
+
+One way of restricting the class of expressions matched by
+a pattern is to match on the head of the expression. This is done with patterns
+of the form _head.
+
+---
+
+vec = {0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1};
+
+DeleteCases[vec, 0]
+
+Cases[vec, Except@0]
+
+Cases[vec, x_ /; x != 0]
+
+Cases[vec, _ ? (# != 0 &)]
+
+zeroQ[x_] := x == 0; Cases[vec, _?(Not@*zeroQ)]
+
+Cases[vec, _?(Not@*PossibleZero)]
+
+---
+
+Quirks 
+
+In[142]:= MatchQ[x/y, _/_] (* _/_ == 1 *)
+
+Out[142]= False
+
+In[143]:= MatchQ[x/y, a_/b_]
+
+Out[143]= True
+
+In[145]:= MatchQ[9/3, a_/b_] (* Ok *)
+
+Out[145]= False
+
+In[146]:= MatchQ[3/9, a_/b_] (* ??? *)
+
+Out[146]= False
+
+The pattern matcher is a syntactic tool, not a semantic one. This means that
+patterns match expressions based on the explicit structure of the expression,
+not what that expression means or what it might reduce to. a_/b_ is not
+Rational[a,b]
+
+In[147]:= MatchQ[3/9, Rational[_, _]]
+
+Out[147]= True
+
+---
+
+Basic Syntax
+
+f[x,y] — function arguments go in square brackets
+
+Exp, Do, ... — built-in symbols have names beginning with capital letters
+
+{...} (List) ▪  "..." (String) ▪  e[[i]] (Part) ▪  e[[i;;j]] (Span)
+
+Basic Operations
+
+x = val — set a value (=. to clear a value)
+
+(* Properties & Relations  (2)
+
+Use =. to clear definitions with a particular left-hand side:
+
+In[1]:= fact[1] = 1;
+fact[n_] := n fact[n - 1]
+
+In[2]:= fact[1] =.
+
+In[3]:= Definition[fact]
+
+Out[3]= Definition[fact]
+
+Clear all definitions:
+
+In[4]:= Clear[fact]
+
+In[5]:= Definition[fact]
+
+Out[5]= Definition[fact]
+
+*)
+
+lhs := rhs — function etc. definition
+
+
+a -> b — rule for transformations, options, etc. (:> for delayed rule)
+
+expr /. rule — replace using a rule ("slash dot")
+
+Mathematics & Operators
+
+x == val — test equality or represent a symbolic equation (!= for unequal)
+
+=== (SameQ)
+
+=!= (UnsameQ)
+
++ ▪  - ▪  * ▪  / ▪  ^ (Power) ▪  && (And) ▪  || (Or) ▪  ! (Not) ▪  <> (StringJoin)
+
+a b c — spaces stand for multiplication
+
+nn*^ee — scientific notation
+
+b^^nnnn — number in a base
+
+∈ (Element) (* No ASCII *) 
+
+Patterns
+
+x_ — any expression ("x blank")
+
+x__, x___ — sequences of arbitrary expressions (one or more, zero or more)
+
+_, __, ___ — unnamed patterns
+
+x:p — pattern name
+
+p:d — pattern default
+
+.. (Repeated) ▪  | (Alternatives) ▪  /; (Condition) ▪  ? (PatternTest)
+
+~~ (StringExpression) — concatenation of string patterns
+
+Pure Functions
+
+body&, x |-> body, {x,y,..} |-> body— a pure function
+
+#, #2, etc. — unnamed arguments in a pure function
+
+#name — named part of a pure function argument
+
+Function Combinations
+
+f@*g — composition of f with g (f[g[…]])
+
+f/*g — composition of g with f (g[f[…])
+
+Short Forms
+
+f @ expr — prefix function application f[expr]
+
+expr // f — postfix function application ("slash slash") f[expr]
+
+/@ (Map — "slash at") ▪  @@,@@@ (Apply) ▪  //= (ApplyTo)
+
+Program Syntax
+
+expr; expr; expr — sequence of commands (CompoundExpression)
+
+<< file — input a file (>>file, >>>file for outputting to a file)
+
+(* … *) — comment
+
+ccc`nnn — symbol in context ccc
+
+Session Syntax
+
+% — most recent output (%n for output on line n)
+
+? x — information on symbol 
+
+===
+
+There is a convenient shorthand notation for conditional patterns that is
+commonly used. The condition expr_ /; test can be shortened to expr_ ?test.
+(??????)
+
+===
+
+
